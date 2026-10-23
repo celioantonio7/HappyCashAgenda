@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Copy, Loader2, QrCode } from "lucide-react";
+import { Copy, Loader2, QrCode } from "@/components/animated-icons";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Dialog,

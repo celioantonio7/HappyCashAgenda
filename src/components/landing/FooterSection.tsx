@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays } from '@/components/animated-icons';
 import { useAgendaBranding } from '@/hooks/useAgendaBranding';
 
 gsap.registerPlugin(ScrollTrigger);

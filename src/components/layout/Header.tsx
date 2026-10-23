@@ -29,7 +29,7 @@ import {
   Phone,
   Loader2,
   ShoppingCart,
-} from "lucide-react";
+} from "@/components/animated-icons";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -1,7 +1,8 @@
+import { isAgendaDemo, demoServices } from "@/lib/agendaDemo";
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowRight, Clock, Zap, Loader2 } from 'lucide-react';
+import { ArrowRight, Clock, Zap, Loader2 } from '@/components/animated-icons';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,6 +42,7 @@ export function ServicesSection() {
   const publicPath = (path: string) => withAgendaPublicSearch(path, settings);
 
   useEffect(() => {
+    if (isAgendaDemo) { setServices(demoServices); setLoading(false); return; }
     if (!settings.storeAccountId) {
       setServices([]);
       setLoading(false);

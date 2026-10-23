@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { Facebook, Instagram, Share2, Phone } from "lucide-react";
+import { Facebook, Instagram, Share2, Phone } from "@/components/animated-icons";
 import { useAgendaBranding } from "@/hooks/useAgendaBranding";
 import { buildWhatsAppUrl } from "@/lib/agendaWhatsApp";
 

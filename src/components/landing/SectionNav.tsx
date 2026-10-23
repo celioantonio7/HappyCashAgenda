@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Users, Info, MapPin } from "lucide-react";
+import { Users, Info, MapPin } from "@/components/animated-icons";
 
 gsap.registerPlugin(ScrollTrigger);
 

@@ -1,7 +1,8 @@
+import { saveAgendaBookingDraft } from '@/lib/agendaBookingDraft';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, User, Scissors, X, Loader2, Trophy, CalendarSync } from 'lucide-react';
+import { Calendar, Clock, User, Scissors, X, Loader2, Trophy, CalendarSync } from '@/components/animated-icons';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,7 @@ interface ExtraService {
 }
 
 interface Appointment {
+  service_id: string;
   id: string;
   client_name: string;
   appointment_date: string;
@@ -93,6 +95,7 @@ type BookedSlotRow = {
 
 export default function MyAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [historyFilter, setHistoryFilter] = useState<'all'|'completed'|'cancelled'>('all');
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -272,6 +275,7 @@ export default function MyAppointments() {
         appointment_time,
         appointment_type,
         barber_id,
+        service_id,
         status,
         barber:barbers(name, phone),
         service:services(name, price, duration_minutes)
@@ -307,6 +311,7 @@ export default function MyAppointments() {
 
       const formatted = data.map((apt) => ({
         ...apt,
+        appointment_type: apt.appointment_type === "queue" ? "queue" as const : "appointment" as const,
         barber: apt.barber as unknown as { name: string; phone?: string | null },
         service: apt.service as unknown as { name: string; price: number; duration_minutes: number },
         extraServices: extraServicesMap[apt.id] || [],
@@ -425,6 +430,11 @@ export default function MyAppointments() {
   const pastAppointments = appointments
     .filter(apt => apt.status !== 'scheduled' || new Date(`${apt.appointment_date}T${apt.appointment_time}`) < new Date())
     .sort(sortByStatus);
+  const filteredHistory = pastAppointments.filter(appointment => historyFilter === 'all' || appointment.status === historyFilter);
+  const bookAgain = (appointment: Appointment) => {
+    saveAgendaBookingDraft({ returnPath: publicBookingPath, storeSlug: settings.slug, step: 'datetime', bookingFlow: 'appointment', serviceIds: [appointment.service_id, ...appointment.extraServices.map(service => service.id)], barberId: appointment.barber_id, appointmentDate: null, appointmentTime: null, clientName: appointment.client_name, clientPhone: '' });
+    navigate(publicBookingPath);
+  };
 
   // Calcula preço total incluindo serviços extras
   const getTotalPrice = (apt: Appointment) => {
@@ -656,9 +666,9 @@ export default function MyAppointments() {
         >
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="font-serif text-3xl font-bold">Meus Agendamentos</h1>
+              <h1 className="font-serif text-3xl font-bold">Meu <span className="text-primary">histórico.</span></h1>
               <p className="text-muted-foreground mt-1">
-                Gerencie seus horários marcados
+                Seus próximos horários e atendimentos anteriores.
               </p>
             </div>
             <Button onClick={() => navigate(publicBookingPath)} className="w-full sm:w-auto">
@@ -794,9 +804,9 @@ export default function MyAppointments() {
 
               {pastAppointments.length > 0 && (
                 <div>
-                  <h2 className="font-serif text-xl font-semibold mb-4">Histórico</h2>
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4"><h2 className="font-serif text-xl font-semibold">Histórico</h2><div className="flex gap-1" aria-label="Filtrar histórico">{([{value:'all',label:'Todos'},{value:'completed',label:'Concluídos'},{value:'cancelled',label:'Cancelados'}] as const).map(filter=><Button key={filter.value} size="sm" variant={historyFilter===filter.value?'default':'ghost'} aria-pressed={historyFilter===filter.value} onClick={()=>setHistoryFilter(filter.value)}>{filter.label}</Button>)}</div></div>{filteredHistory.length===0 && <p className="text-sm text-muted-foreground py-5">Nenhum atendimento neste filtro.</p>}
                   <div className="space-y-4">
-                    {pastAppointments.map((apt, index) => (
+                    {filteredHistory.map((apt, index) => (
                       <motion.div
                         key={apt.id}
                         initial={{ opacity: 0, y: 10 }}
@@ -845,6 +855,7 @@ export default function MyAppointments() {
                                 )}
                               </div>
                             </div>
+                          <Button variant="outline" size="sm" className="mt-4" onClick={() => bookAgain(apt)}>Agendar novamente</Button>
                           </CardContent>
                         </Card>
                       </motion.div>
@@ -985,7 +996,7 @@ export default function MyAppointments() {
                                       ? 'cursor-not-allowed border-border bg-background text-muted-foreground opacity-50'
                                       : rescheduleTime === slot
                                         ? 'border-primary bg-primary text-primary-foreground'
-                                        : 'border-emerald-500/30 bg-emerald-500/10 text-foreground hover:border-emerald-500/60'
+                                        : 'border-emerald-500/30 bg-primary/10 text-foreground hover:border-emerald-500/60'
                                 )}
                               >
                                 <span

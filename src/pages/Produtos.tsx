@@ -1,14 +1,15 @@
+import { isAgendaDemo, demoProducts } from "@/lib/agendaDemo";
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ShoppingBag, Package, ShoppingCart } from 'lucide-react';
+import { ShoppingBag, Package, ShoppingCart } from '@/components/animated-icons';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Layout } from '@/components/layout/Layout';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/components/animated-icons';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgendaBranding } from '@/hooks/useAgendaBranding';
@@ -40,6 +41,7 @@ export default function Products() {
   const publicPath = (path: string) => withAgendaPublicSearch(path, settings);
 
   const fetchProducts = useCallback(async () => {
+    if (isAgendaDemo) { setProducts(demoProducts); setLoading(false); return; }
     if (!settings.storeAccountId) {
       setProducts([]);
       setLoading(false);
@@ -83,7 +85,7 @@ export default function Products() {
   }, [loading, products, selectedCategory]);
 
   const handleBuy = (product: Product) => {
-    if (!user) return;
+    if (!user && !isAgendaDemo) return;
     if (product.stock_quantity <= 0) return;
     addItem({ id: product.id, name: product.name, price: product.price, image_url: product.image_url });
   };
@@ -116,7 +118,7 @@ export default function Products() {
         </div>
 
         {/* Cart FAB - only for logged-in users */}
-        {user && itemCount > 0 && (
+        {(user || isAgendaDemo) && itemCount > 0 && (
           <button
             onClick={() => setIsOpen(true)}
             className="fixed bottom-6 right-6 z-50 bg-primary text-primary-foreground w-14 h-14 rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform"
@@ -175,7 +177,7 @@ export default function Products() {
                       <span className="text-[10px] text-amber-600 whitespace-nowrap">{product.stock_quantity} un</span>
                     )}
                   </div>
-                  {user ? (
+                  {user || isAgendaDemo ? (
                     <Button size="sm" className="w-full mt-1 rounded-full gap-2" disabled={product.stock_quantity <= 0} onClick={() => handleBuy(product)}>
                       <ShoppingCart className="w-4 h-4" />
                       {product.stock_quantity <= 0 ? 'Indisponível' : 'Adicionar'}

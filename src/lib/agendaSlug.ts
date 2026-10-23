@@ -1,6 +1,9 @@
 /** Rotas fixas do app — slugs de empresa não podem colidir com estes paths. */
 export const AGENDA_RESERVED_SLUGS = new Set([
   "login",
+  "perfil",
+  "feed",
+  "assinatura",
   "agendamento",
   "booking",
   "meus-agendamentos",

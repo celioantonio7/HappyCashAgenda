@@ -84,3 +84,18 @@ Este repositorio nao vem conectado a Vercel. Se precisar publicar:
 ## Separacao do HappyCash ERP
 
 O HappyCash ERP e o HappyCashSite continuam no monorepo principal. A Agenda fica aqui separada para manutencao futura, sem interferir no ERP.
+
+## Catálogo de demonstração local
+
+Adicione `VITE_AGENDA_DEMO=true` ao `.env.local` e execute `npm run dev`.
+Este modo mostra 6 produtos, 3 profissionais, 6 serviços e horários fictícios
+na página pública, na vitrine e na seleção de agendamento. O carrinho pode ser
+experimentado sem login. Pedidos e agendamentos fictícios não são enviados ao
+Supabase. A autenticação continua usando a configuração normal do projeto.
+O painel administrativo continua exigindo uma empresa e assinatura válidas.
+Para desativar, remova a variável ou use `false`. O build de produção ignora
+este modo, mesmo que a variável esteja habilitada.
+
+## Acesso administrativo
+
+Consulte [Acesso do dono da barbearia](src/docs/OWNER_ACCESS.md) para a identificação de donos e clientes, o acesso de teste, as permissões por empresa e a ordem de aplicação do complemento de banco. As migrations legadas foram preservadas; a instalação do zero exige os pré-requisitos descritos nesse documento antes da migration antiga de fila.

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Briefcase, CheckCircle2, Clock, User } from 'lucide-react';
+import { Briefcase, CheckCircle2, Clock, User } from '@/components/animated-icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

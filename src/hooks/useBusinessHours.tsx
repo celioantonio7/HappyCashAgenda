@@ -1,3 +1,4 @@
+import { isAgendaDemo, demoBusinessHours } from "@/lib/agendaDemo";
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -17,6 +18,7 @@ export function useBusinessHours(storeAccountId?: string) {
   const [isCurrentlyOpen, setIsCurrentlyOpen] = useState(false);
 
   const fetchBusinessHours = useCallback(async () => {
+    if (isAgendaDemo) { setBusinessHours(demoBusinessHours); setLoading(false); return; }
     if (!storeAccountId) {
       setBusinessHours([]);
       setLoading(false);

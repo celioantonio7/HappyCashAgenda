@@ -3,10 +3,11 @@ import {
   isPaidPlanAllowedForProductContext,
   normalizeProductContext,
   type ProductContext,
-} from "../../../shared/productContext";
+} from "@/shared/productContext";
 
 type StoreAccountRow = {
   product_context: ProductContext | null;
+  test_access_ends_at: string | null;
 };
 
 type SubscriptionRow = {
@@ -54,7 +55,7 @@ export async function validateAgendaStoreAccess(ownerUserId: string) {
   ] = await Promise.all([
     supabase
       .from("store_accounts")
-      .select("product_context")
+      .select("product_context, test_access_ends_at")
       .eq("owner_user_id", ownerUserId)
       .eq("product_context", AGENDA_CONTEXT)
       .maybeSingle<StoreAccountRow>(),
@@ -73,6 +74,10 @@ export async function validateAgendaStoreAccess(ownerUserId: string) {
   const accountProductContext = normalizeProductContext(storeAccount?.product_context);
   if (accountProductContext !== AGENDA_CONTEXT) {
     return { ok: false as const, message: AGENDA_PRODUCT_CONTEXT_MISMATCH };
+  }
+
+  if (storeAccount?.test_access_ends_at && new Date(storeAccount.test_access_ends_at).getTime() > Date.now()) {
+    return { ok: true as const };
   }
 
   const subscriptionRows = ((subscriptions as SubscriptionRow[] | null) || []).filter((subscription) =>

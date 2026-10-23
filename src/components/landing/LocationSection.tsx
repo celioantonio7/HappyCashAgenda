@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { MapPin, Phone, Navigation } from "lucide-react";
+import { MapPin, Phone, Navigation } from "@/components/animated-icons";
 import { useBusinessLocations } from "@/hooks/useBusinessLocations";
 import { useBusinessHours } from "@/hooks/useBusinessHours";
 import { useAgendaBranding } from "@/hooks/useAgendaBranding";

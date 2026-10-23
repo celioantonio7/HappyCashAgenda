@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Facebook, ImagePlus, Instagram, Pencil, Save, X } from "lucide-react";
+import { Facebook, ImagePlus, Instagram, Pencil, Save, X } from "@/components/animated-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

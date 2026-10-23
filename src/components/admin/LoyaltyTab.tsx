@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, Edit, Trash2, Trophy, Target, Gift, UserPlus, Minus, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Trophy, Target, Gift, UserPlus, Minus, Search } from '@/components/animated-icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

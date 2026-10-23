@@ -1,3 +1,5 @@
+import { OperationalBarChart, OperationalPieChart, OperationalAreaChart, chartPalette } from '@/components/app/OperationalCharts';
+import { ownerGroups } from '@/components/app/navigation';
 /**
  * ==============================================================
  * PÁGINA: AdminDashboard (Painel Administrativo)
@@ -20,7 +22,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Calendar, Clock, Users, Scissors, TrendingUp,
@@ -28,7 +30,7 @@ import {
   BarChart3, CalendarDays, Filter, Search, Trash2, DollarSign,
   Package, ShoppingBag, AlertCircle, CheckCircle, XCircle, Eye, EyeOff, Key,
   Trophy, MapPin, ClockIcon
-} from 'lucide-react';
+} from '@/components/animated-icons';
 import { LoyaltyTab } from '@/components/admin/LoyaltyTab';
 import { AppointmentQueueTab } from '@/components/admin/AppointmentQueueTab';
 import { ProductSalesTab } from '@/components/admin/ProductSalesTab';
@@ -88,12 +90,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+
+
 
 interface ExtraService {
   id: string;
@@ -159,6 +157,7 @@ interface Service {
 }
 
 type AppointmentRealtimeRow = {
+  client_phone?: string | null;
   id?: string;
   client_name?: string;
   appointment_date?: string;
@@ -168,6 +167,8 @@ type AppointmentRealtimeRow = {
 };
 
 type AppointmentServiceRealtimeRow = {
+  id?: string;
+  service_id?: string;
   appointment_id?: string;
   added_by_barber?: boolean;
 };
@@ -186,7 +187,7 @@ const isMissingColumnError = (message: string) =>
   /column|schema cache|does not exist|PGRST204/i.test(message);
 
 // Cores para gráficos
-const CHART_COLORS = ['hsl(220, 60%, 35%)', 'hsl(38, 80%, 55%)', 'hsl(160, 60%, 45%)', 'hsl(280, 60%, 50%)'];
+const CHART_COLORS = chartPalette;
 
 export default function AdminDashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -194,7 +195,9 @@ export default function AdminDashboard() {
   const [services, setServices] = useState<Service[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'overview';
+  const setActiveTab = (tab: string) => setSearchParams(params => { params.set('tab', tab); return params; });
 
   // Filters
   const [filterBarber, setFilterBarber] = useState<string>('all');
@@ -541,7 +544,8 @@ export default function AdminDashboard() {
         .select(select)
         .eq('store_account_id', settings.storeAccountId)
         .order('appointment_date', { ascending: false })
-        .order('appointment_time', { ascending: false });
+        .order('appointment_time', { ascending: false })
+        .returns<Omit<Appointment, 'extraServices'>[]>();
 
     let { data, error } = await queryAppointments(appointmentsSelectWithType);
 
@@ -593,7 +597,7 @@ export default function AdminDashboard() {
     if (!settings.storeAccountId) return;
     const { data } = await supabase
       .from('barbers')
-      .select('*')
+      .select('id, name, email, phone, photo_url, bio, is_active, created_at, updated_at, commission, user_id, username, owner_user_id, store_account_id')
       .eq('store_account_id', settings.storeAccountId)
       .order('name');
     if (data) setBarbers(data);
@@ -713,6 +717,7 @@ export default function AdminDashboard() {
       const revenue = dayAppointments.reduce((sum, a) => sum + getAppointmentTotalPrice(a), 0);
       data.push({
         name: format(date, 'EEE', { locale: ptBR }),
+        date: dateStr,
         agendamentos: dayAppointments.length,
         faturamento: revenue,
       });
@@ -832,7 +837,7 @@ export default function AdminDashboard() {
     if (!barberPhoto) return null;
 
     const fileExt = barberPhoto.name.split('.').pop();
-    const fileName = `${barberId}-${Date.now()}.${fileExt}`;
+    const fileName = `${settings.storeAccountId}/${barberId}-${Date.now()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from('barber-photos')
@@ -934,8 +939,8 @@ export default function AdminDashboard() {
         toast({ title: 'Erro', description: 'Usuário deve ter no mínimo 3 caracteres.', variant: 'destructive' });
         return;
       }
-      if (!passwordRegex.test(barberPassword)) {
-        toast({ title: 'Erro', description: 'Senha deve ter mínimo 8 caracteres, 1 maiúscula e 1 símbolo.', variant: 'destructive' });
+      if (barberPassword.length < 12 || !passwordRegex.test(barberPassword)) {
+        toast({ title: 'Erro', description: 'Senha deve ter mínimo 12 caracteres, 1 maiúscula e 1 símbolo.', variant: 'destructive' });
         return;
       }
     }
@@ -1159,7 +1164,7 @@ export default function AdminDashboard() {
     if (!productPhoto) return null;
 
     const fileExt = productPhoto.name.split('.').pop();
-    const fileName = `${productId}-${Date.now()}.${fileExt}`;
+    const fileName = `${settings.storeAccountId}/${productId}-${Date.now()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from('product-images')
@@ -1196,6 +1201,8 @@ export default function AdminDashboard() {
     }
 
     const productData = {
+      owner_user_id: settings.ownerUserId,
+      store_account_id: settings.storeAccountId,
       name: productName,
       description: productDescription || null,
       price: parseFloat(productPrice),
@@ -1265,14 +1272,14 @@ export default function AdminDashboard() {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="owner-dashboard container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="font-serif text-3xl font-bold">Dashboard Administrativo</h1>
+              <h1 className="font-serif text-3xl font-bold">{ownerGroups.flatMap(group => group.items).find(item => item.tab === activeTab)?.label || "Visão geral"}</h1>
               <p className="text-muted-foreground mt-1">
                 Gerencie {settings.displayName}
               </p>
@@ -1280,7 +1287,7 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6 flex-wrap h-auto gap-1 p-1">
+            <TabsList className="owner-legacy-tabs" aria-label="Áreas administrativas">
               <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-3">Visão Geral</TabsTrigger>
               <TabsTrigger value="queue" className="text-xs sm:text-sm px-2 sm:px-3">Fila</TabsTrigger>
               <TabsTrigger value="appointments" className="text-xs sm:text-sm px-2 sm:px-3">Agendamentos</TabsTrigger>
@@ -1320,7 +1327,7 @@ export default function AdminDashboard() {
 
             <TabsContent value="overview">
               {/* Stats Cards */}
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div className="owner-kpis">
                 <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
@@ -1344,8 +1351,8 @@ export default function AdminDashboard() {
                         <p className="text-2xl font-bold">{weeklyAppointments.length}</p>
                         <p className="text-xs text-muted-foreground">R$ {weeklyRevenue.toFixed(0)}</p>
                       </div>
-                      <div className="p-3 bg-emerald-500/10 rounded-full">
-                        <CalendarDays className="w-6 h-6 text-emerald-500" />
+                      <div className="p-3 bg-primary/10 rounded-full">
+                        <CalendarDays className="w-6 h-6 text-primary" />
                       </div>
                     </div>
                   </CardContent>
@@ -1359,8 +1366,8 @@ export default function AdminDashboard() {
                         <p className="text-2xl font-bold">{monthlyAppointments.length}</p>
                         <p className="text-xs text-muted-foreground">agendamentos</p>
                       </div>
-                      <div className="p-3 bg-blue-500/10 rounded-full">
-                        <BarChart3 className="w-6 h-6 text-blue-500" />
+                      <div className="p-3 bg-primary/10 rounded-full">
+                        <BarChart3 className="w-6 h-6 text-primary" />
                       </div>
                     </div>
                   </CardContent>
@@ -1391,8 +1398,8 @@ export default function AdminDashboard() {
                           <p className="text-2xl font-bold">R$ {monthlyAverageTicket.toFixed(0)}</p>
                           <p className="text-xs text-muted-foreground">serviços concluídos</p>
                         </div>
-                        <div className="p-3 bg-emerald-500/10 rounded-full">
-                          <DollarSign className="w-6 h-6 text-emerald-500" />
+                        <div className="p-3 bg-primary/10 rounded-full">
+                          <DollarSign className="w-6 h-6 text-primary" />
                         </div>
                       </div>
                     </CardContent>
@@ -1436,8 +1443,8 @@ export default function AdminDashboard() {
                           <p className="text-2xl font-bold">{lowStockAgendaProducts.length}</p>
                           <p className="text-xs text-muted-foreground">produtos com 3 ou menos</p>
                         </div>
-                        <div className="p-3 bg-blue-500/10 rounded-full">
-                          <Package className="w-6 h-6 text-blue-500" />
+                        <div className="p-3 bg-primary/10 rounded-full">
+                          <Package className="w-6 h-6 text-primary" />
                         </div>
                       </div>
                     </CardContent>
@@ -1527,17 +1534,10 @@ export default function AdminDashboard() {
                 <Card className="overflow-hidden">
                   <CardHeader className="pb-2 p-3 sm:p-4">
                     <CardTitle className="font-serif text-sm sm:text-base">Últimos 7 Dias</CardTitle>
-                    <CardDescription className="text-xs">Agendamentos por dia</CardDescription>
+                    <CardDescription className="text-xs">Valor dos serviços agendados, incluindo os pendentes</CardDescription>
                   </CardHeader>
                   <CardContent className="p-2 sm:p-4">
-                    <ChartContainer config={chartConfig} className="h-[140px] sm:h-[200px] w-full">
-                      <BarChart data={getLast7DaysData()} margin={{ left: 0, right: 5, top: 5, bottom: 5 }}>
-                        <XAxis dataKey="name" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} tickMargin={5} />
-                        <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} width={25} />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="agendamentos" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ChartContainer>
+                    <OperationalAreaChart data={getLast7DaysData()} />
                   </CardContent>
                 </Card>
 
@@ -1552,24 +1552,7 @@ export default function AdminDashboard() {
                       <p className="text-center text-muted-foreground py-4 text-sm">Nenhum dado ainda.</p>
                     ) : (
                       <div className="flex items-center gap-2 sm:gap-4">
-                        <ChartContainer config={chartConfig} className="h-[120px] sm:h-[160px] w-[100px] sm:w-[140px] shrink-0">
-                          <PieChart>
-                            <Pie
-                              data={getServiceDistribution()}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={25}
-                              outerRadius={45}
-                              paddingAngle={3}
-                              dataKey="value"
-                            >
-                              {getServiceDistribution().map((_, index) => (
-                                <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <ChartTooltip content={<ChartTooltipContent />} />
-                          </PieChart>
-                        </ChartContainer>
+                        <OperationalPieChart data={getServiceDistribution()} />
                         <div className="flex-1 space-y-1 min-w-0">
                           {getServiceDistribution().slice(0, 4).map((item, index) => (
                             <div key={item.name} className="flex items-center justify-between gap-1">
@@ -1594,14 +1577,7 @@ export default function AdminDashboard() {
                   <CardDescription className="text-xs">Agendamentos por {settings.professionalLabel.toLowerCase()} neste mês</CardDescription>
                 </CardHeader>
                 <CardContent className="p-2 sm:p-4">
-                  <ChartContainer config={chartConfig} className="h-[120px] sm:h-[180px] w-full">
-                    <BarChart data={getBarberPerformance()} layout="vertical" margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
-                      <XAxis type="number" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
-                      <YAxis type="category" dataKey="name" tick={{ fontSize: 9 }} width={70} tickLine={false} axisLine={false} tickMargin={5} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="agendamentos" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ChartContainer>
+                  <OperationalBarChart data={getBarberPerformance()} horizontal />
                 </CardContent>
               </Card>
 
@@ -1668,7 +1644,7 @@ export default function AdminDashboard() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => updateAppointmentStatus(apt.id, 'completed')}
-                                className="flex-1 text-emerald-600 text-xs h-8"
+                                className="flex-1 text-primary text-xs h-8"
                               >
                                 <Check className="w-3 h-3 mr-1" />
                                 Concluir
@@ -1711,11 +1687,11 @@ export default function AdminDashboard() {
                 <Card className="cursor-pointer hover:ring-2 ring-emerald-500 transition-all" onClick={() => setFilterStatus('completed')}>
                   <CardContent className="pt-4">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-emerald-500/10 rounded-full">
-                        <CheckCircle className="w-5 h-5 text-emerald-500" />
+                      <div className="p-2 bg-primary/10 rounded-full">
+                        <CheckCircle className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-emerald-600">{appointments.filter(a => a.status === 'completed').length}</p>
+                        <p className="text-2xl font-bold text-primary">{appointments.filter(a => a.status === 'completed').length}</p>
                         <p className="text-sm text-muted-foreground">Concluídos</p>
                       </div>
                     </div>
@@ -1857,7 +1833,7 @@ export default function AdminDashboard() {
                                       size="sm"
                                       variant="outline"
                                       onClick={() => updateAppointmentStatus(apt.id, 'completed')}
-                                      className="text-emerald-600"
+                                      className="text-primary"
                                     >
                                       <Check className="w-4 h-4" />
                                     </Button>
@@ -1969,7 +1945,7 @@ export default function AdminDashboard() {
                                         onClick={() => updateAppointmentStatus(apt.id, 'completed')}
                                         title="Marcar como concluído"
                                       >
-                                        <Check className="w-4 h-4 text-emerald-600" />
+                                        <Check className="w-4 h-4 text-primary" />
                                       </Button>
                                       <Button
                                         size="sm"
@@ -2010,7 +1986,7 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Concluídos</p>
-                        <p className="text-xl font-bold text-emerald-600">
+                        <p className="text-xl font-bold text-primary">
                           {appointments.filter(a => {
                             const date = new Date(a.appointment_date);
                             return isWithinInterval(date, { start: monthStart, end: monthEnd }) && a.status === 'completed';
@@ -2059,8 +2035,8 @@ export default function AdminDashboard() {
                           </p>
                           <p className="text-xs text-muted-foreground">no mês</p>
                         </div>
-                        <div className="p-3 bg-emerald-500/10 rounded-full">
-                          <Scissors className="w-6 h-6 text-emerald-500" />
+                        <div className="p-3 bg-primary/10 rounded-full">
+                          <Scissors className="w-6 h-6 text-primary" />
                         </div>
                       </div>
                     </CardContent>
@@ -2076,8 +2052,8 @@ export default function AdminDashboard() {
                           </p>
                           <p className="text-xs text-muted-foreground">concluídos</p>
                         </div>
-                        <div className="p-3 bg-blue-500/10 rounded-full">
-                          <TrendingUp className="w-6 h-6 text-blue-500" />
+                        <div className="p-3 bg-primary/10 rounded-full">
+                          <TrendingUp className="w-6 h-6 text-primary" />
                         </div>
                       </div>
                     </CardContent>
@@ -2143,7 +2119,7 @@ export default function AdminDashboard() {
                                 <p className="text-xs text-muted-foreground">faturou</p>
                               </div>
                               <div className="text-center">
-                                <p className="text-lg font-semibold text-emerald-600">
+                                <p className="text-lg font-semibold text-primary">
                                   {((totalCommission / totalRevenue) * 100 || 0).toFixed(0)}%
                                 </p>
                                 <p className="text-xs text-muted-foreground">comissão</p>

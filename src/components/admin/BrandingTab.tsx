@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Palette, RotateCcw, Save, Sparkles } from "lucide-react";
+import { CalendarDays, Palette, RotateCcw, Save, Sparkles } from "@/components/animated-icons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -287,10 +287,10 @@ export function BrandingTab() {
             <Sparkles className="h-5 w-5" />
             Previa
           </CardTitle>
-          <CardDescription>Como a marca aparece no app.</CardDescription>
+          <CardDescription>Sua marca, com o nome e as cores escolhidos.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg border bg-background p-4 shadow-sm">
+          <div className="rounded-lg border bg-background p-4 shadow-sm" style={{ "--primary": draft.primaryHsl, "--accent": draft.accentHsl } as React.CSSProperties}>
             <div className="flex items-center gap-3">
               <div className="flex min-h-12 min-w-12 items-center justify-center">
                 {draft.logoUrl ? (
@@ -315,11 +315,11 @@ export function BrandingTab() {
             <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
               <div className="rounded-lg bg-primary/10 p-3 text-primary">
                 {draft.professionalLabel}
-                <strong className="mt-1 block text-lg text-foreground">8</strong>
+                <strong className="mt-1 block text-lg text-foreground">Sua equipe</strong>
               </div>
               <div className="rounded-lg bg-accent/15 p-3 text-accent-foreground">
                 {draft.serviceLabel}
-                <strong className="mt-1 block text-lg text-foreground">24</strong>
+                <strong className="mt-1 block text-lg text-foreground">Seus serviços</strong>
               </div>
             </div>
             <Button className="mt-4 w-full">Agendar agora</Button>

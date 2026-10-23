@@ -8,10 +8,9 @@ import {
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  resolveAgendaOwnerUserId,
   validateAgendaAdminAccess,
 } from "@/lib/agendaAuth";
-import { requestTurnstileToken } from "../../../shared/security/turnstile";
+import { requestTurnstileToken } from "@/shared/security/turnstile";
 
 type SignUpInput = {
   fullName: string;
@@ -21,7 +20,6 @@ type SignUpInput = {
 };
 
 type AgendaProfileRow = {
-  role?: string | null;
   owner_user_id?: string | null;
   full_name?: string | null;
   phone?: string | null;
@@ -33,7 +31,9 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null; isAdmin: boolean }>;
+  isStaff: boolean;
+  ownerUserId: string | null;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null; isAdmin: boolean; isStaff: boolean }>;
   signUp: (input: SignUpInput) => Promise<{ error: Error | null; needsEmailConfirmation: boolean }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
@@ -41,26 +41,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const isAgendaAdminProfile = async (userId: string) => {
-  const { data: profileAdmin } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("role", "admin")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (profileAdmin) return true;
-
-  const { data: roleAdmin } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .maybeSingle();
-
-  return !!roleAdmin;
-};
 
 const normalizePhone = (value?: string | null) => value?.replace(/\D/g, "").slice(0, 15) ?? "";
 
@@ -86,7 +66,7 @@ const getProfileMetadata = (user: User) => {
 const getAgendaProfile = async (userId: string) => {
   const { data } = await supabase
     .from("profiles")
-    .select("role, owner_user_id, full_name, phone, avatar_url")
+    .select("owner_user_id, full_name, phone, avatar_url")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -98,12 +78,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
+  const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
 
   const syncProfileMetadata = async (
     nextUser: User,
     profile: AgendaProfileRow | null,
     options?: {
-      forceClientRole?: boolean;
       fullName?: string;
       phone?: string;
     },
@@ -118,14 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const nextPhone = normalizePhone(options?.phone ?? metadata.phone ?? profile?.phone);
     const nextAvatarUrl = metadata.avatarUrl.trim();
     const updates: Record<string, string> = {};
-
-    if (options?.forceClientRole && profile?.role === "admin") {
-      updates.role = "client";
-    }
-
-    if (!profile?.owner_user_id) {
-      updates.owner_user_id = nextUser.id;
-    }
 
     if (nextFullName && nextFullName !== (profile?.full_name ?? "")) {
       updates.full_name = nextFullName;
@@ -144,49 +117,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.from("profiles").update(updates).eq("user_id", nextUser.id);
   };
 
-  const shouldDowngradeToClient = async (
-    nextUser: User,
-    profile: AgendaProfileRow | null,
-  ) => {
-    if (profile?.role !== "admin") return false;
-
-    const ownerUserId = profile?.owner_user_id ?? (await resolveAgendaOwnerUserId(nextUser.id));
-    if (ownerUserId !== nextUser.id) return false;
-
-    const { data: storeAccount } = await supabase
-      .from("store_accounts")
-      .select("id")
-      .eq("owner_user_id", ownerUserId)
-      .eq("product_context", "happycashagenda")
-      .maybeSingle();
-
-    return !storeAccount;
-  };
-
   const syncUserAccess = async (nextUser: User) => {
-    const profile = await getAgendaProfile(nextUser.id);
-    const adminProfile = await isAgendaAdminProfile(nextUser.id);
+    const [profile, { data: roles }] = await Promise.all([
+      getAgendaProfile(nextUser.id),
+      supabase.from('user_roles').select('role').eq('user_id', nextUser.id),
+    ]);
+    const adminProfile = roles?.some(row => row.role === 'admin') ?? false;
+    const staff = roles?.some(row => row.role === 'barber') ?? false;
+    setIsStaff(staff);
+    let owner = profile?.owner_user_id ?? nextUser.id;
+    if (staff && !adminProfile) {
+      const { data: professional } = await supabase.from('barbers').select('owner_user_id').eq('user_id', nextUser.id).maybeSingle();
+      owner = professional?.owner_user_id ?? owner;
+    }
+    setOwnerUserId(owner);
 
     if (!adminProfile) {
       setIsAdmin(false);
       await syncProfileMetadata(nextUser, profile);
-      return false;
+      return { isAdmin: false, isStaff: staff };
     }
 
     const access = await validateAgendaAdminAccess(nextUser.id);
     if (!access.ok) {
-      if (await shouldDowngradeToClient(nextUser, profile)) {
-        await syncProfileMetadata(nextUser, profile, { forceClientRole: true });
-      } else {
-        await syncProfileMetadata(nextUser, profile);
-      }
+      await syncProfileMetadata(nextUser, profile);
       setIsAdmin(false);
-      return false;
+      return { isAdmin: false, isStaff: staff };
     }
 
     await syncProfileMetadata(nextUser, profile);
     setIsAdmin(true);
-    return true;
+    return { isAdmin: true, isStaff: staff };
   };
 
   useEffect(() => {
@@ -198,6 +159,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await syncUserAccess(nextSession.user);
       } else {
         setIsAdmin(false);
+        setIsStaff(false);
+        setOwnerUserId(null);
       }
       setLoading(false);
     };
@@ -230,14 +193,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error || !data.user) {
         setIsAdmin(false);
-        return { error: error ?? new Error("Nao foi possivel entrar."), isAdmin: false };
+        return { error: error ?? new Error("Nao foi possivel entrar."), isAdmin: false, isStaff: false };
       }
 
       const adminProfile = await syncUserAccess(data.user);
-      return { error: null, isAdmin: adminProfile };
+      return { error: null, ...adminProfile };
     } catch (error) {
       setIsAdmin(false);
-      return { error: error instanceof Error ? error : new Error("Nao foi possivel concluir a verificacao de seguranca."), isAdmin: false };
+      return { error: error instanceof Error ? error : new Error("Nao foi possivel concluir a verificacao de seguranca."), isAdmin: false, isStaff: false };
     }
   };
 
@@ -267,7 +230,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (data.user && data.session) {
         await syncProfileMetadata(data.user, await getAgendaProfile(data.user.id), {
-          forceClientRole: true,
           fullName,
           phone: normalizedPhone,
         });
@@ -321,6 +283,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setIsAdmin(false);
+    setIsStaff(false);
   };
 
   return (
@@ -330,6 +293,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         loading,
         isAdmin,
+        isStaff,
+        ownerUserId,
         signIn,
         signUp,
         signInWithGoogle,

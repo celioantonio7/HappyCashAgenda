@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Edit, Trash2, Users, Search, Phone, Mail } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Search, Phone, Mail } from "@/components/animated-icons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -166,6 +166,8 @@ export function ClientsTab() {
     setSubmitting(true);
 
     const data = {
+      owner_user_id: settings.ownerUserId,
+      store_account_id: settings.storeAccountId,
       name: name.trim(),
       phone: phone || "",
       email: email || null,

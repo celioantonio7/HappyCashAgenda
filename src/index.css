@@ -25,7 +25,6 @@
  */
 
 /* Importação de fontes do Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* Diretivas Tailwind - Importa os estilos base, componentes e utilitários */
 @tailwind base;
@@ -357,3 +356,5 @@
     }
   }
 }
+
+/* Product design system overrides the legacy presentation theme. */

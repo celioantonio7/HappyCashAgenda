@@ -1,7 +1,8 @@
+import { isAgendaDemo, demoBarbers } from "@/lib/agendaDemo";
 import { useEffect, useRef, useState, useCallback } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Briefcase, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Briefcase, Star, ChevronLeft, ChevronRight } from '@/components/animated-icons';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -116,6 +117,7 @@ export function BarberGallery() {
   const { settings } = useAgendaBranding();
 
   useEffect(() => {
+    if (isAgendaDemo) { setBarbers(demoBarbers); setLoading(false); return; }
     if (!settings.storeAccountId) {
       setBarbers([]);
       setLoading(false);

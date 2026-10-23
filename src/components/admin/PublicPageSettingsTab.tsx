@@ -1,5 +1,5 @@
 import { type CSSProperties, useEffect, useState } from "react";
-import { Facebook, ImagePlus, Instagram, Link2, MapPin, MessageCircle, Palette, Save, Users } from "lucide-react";
+import { Facebook, ImagePlus, Instagram, Link2, MapPin, MessageCircle, Palette, Save, Users } from "@/components/animated-icons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

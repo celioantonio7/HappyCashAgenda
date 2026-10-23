@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarClock, Package, ShoppingCart, TrendingUp } from 'lucide-react';
+import { CalendarClock, Package, ShoppingCart, TrendingUp } from '@/components/animated-icons';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
@@ -138,8 +138,8 @@ export function ProductSalesTab({ products }: ProductSalesTabProps) {
                 <p className="text-3xl font-bold">{totalStock}</p>
                 <p className="text-xs text-muted-foreground">unidades total</p>
               </div>
-              <div className="p-3 rounded-full bg-emerald-500/10">
-                <ShoppingCart className="w-6 h-6 text-emerald-500" />
+              <div className="p-3 rounded-full bg-primary/10">
+                <ShoppingCart className="w-6 h-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -152,8 +152,8 @@ export function ProductSalesTab({ products }: ProductSalesTabProps) {
                 <p className="text-3xl font-bold">{orders.length}</p>
                 <p className="text-xs text-muted-foreground">{pendingPixOrders.length} Pix pendentes</p>
               </div>
-              <div className="p-3 rounded-full bg-blue-500/10">
-                <CalendarClock className="w-6 h-6 text-blue-500" />
+              <div className="p-3 rounded-full bg-primary/10">
+                <CalendarClock className="w-6 h-6 text-primary" />
               </div>
             </div>
           </CardContent>

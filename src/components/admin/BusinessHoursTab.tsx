@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Clock, Save } from 'lucide-react';
+import { Clock, Save } from '@/components/animated-icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -115,7 +115,7 @@ export function BusinessHoursTab({ isAdmin, onUpdate }: BusinessHoursTabProps) {
                   onCheckedChange={(checked) => updateHour(hour.id, 'is_open', checked)}
                   disabled={!isAdmin}
                 />
-                <span className={`text-xs ${hour.is_open ? 'text-emerald-600' : 'text-rose-500'}`}>
+                <span className={`text-xs ${hour.is_open ? 'text-primary' : 'text-rose-500'}`}>
                   {hour.is_open ? 'Aberto' : 'Fechado'}
                 </span>
               </div>

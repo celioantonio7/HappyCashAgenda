@@ -1,3 +1,4 @@
+import { isAgendaDemo } from "@/lib/agendaDemo";
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -12,7 +13,7 @@ import {
   QrCode,
   ShoppingBag,
   Trash2,
-} from 'lucide-react';
+} from '@/components/animated-icons';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
   Dialog,
@@ -146,6 +147,10 @@ export function CartDrawer() {
   };
 
   const createOrder = async (method: PaymentMethod) => {
+    if (isAgendaDemo) {
+      toast({ title: 'Demonstração local', description: 'Este catálogo é fictício. Nenhum pedido foi enviado ou salvo.' });
+      return;
+    }
     if (!validateCheckout(method) || !settings.storeAccountId) return;
 
     const createdAt = new Date();

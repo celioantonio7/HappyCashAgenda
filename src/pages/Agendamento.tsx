@@ -1,7 +1,9 @@
+import { EmptyState } from '@/components/app/EmptyState';
+import { isAgendaDemo, demoServices, demoBarbers } from "@/lib/agendaDemo";
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Briefcase, Calendar, Clock, User, ArrowRight, ArrowLeft, Check, Loader2, AlertCircle, Users } from 'lucide-react';
+import { Briefcase, Calendar, Clock, User, ArrowRight, ArrowLeft, Check, Loader2, AlertCircle, Users } from '@/components/animated-icons';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { z } from 'zod';
@@ -94,7 +96,7 @@ export default function Booking() {
   const restoredDraftRef = useRef(false);
 
   const { user, loading: authLoading } = useAuth();
-  const { settings } = useAgendaBranding();
+  const { settings, loading: brandingLoading } = useAgendaBranding();
   const { getAvailableTimeSlots, getAllBusinessSlots, getHoursForDay, canBookServiceAtTime } = useBusinessHours(settings.storeAccountId);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -114,7 +116,7 @@ export default function Booking() {
   }, [settings.serviceMode, step]);
 
   useEffect(() => {
-    if (settings.storeAccountId) {
+    if (settings.storeAccountId || isAgendaDemo) {
       fetchServices();
       fetchBarbers();
     }
@@ -223,7 +225,7 @@ export default function Booking() {
 
   // Realtime: atualiza slots quando há mudanças nos agendamentos do barbeiro selecionado
   useEffect(() => {
-    if (!selectedBarber || !selectedDate) return;
+    if (isAgendaDemo || !selectedBarber || !selectedDate) return;
 
     const channel = supabase
       .channel(`booking-slots-${selectedBarber.id}`)
@@ -248,6 +250,7 @@ export default function Booking() {
   }, [selectedBarber, selectedDate, selectedServices]);
 
   const fetchServices = async () => {
+    if (isAgendaDemo) { setServices(demoServices); return; }
     if (!settings.storeAccountId) return;
     const { data } = await supabase
       .from('services')
@@ -259,6 +262,7 @@ export default function Booking() {
   };
 
   const fetchBarbers = async () => {
+    if (isAgendaDemo) { setBarbers(demoBarbers); return; }
     if (!settings.storeAccountId) return;
     const { data } = await supabase
       .from('barbers')
@@ -311,7 +315,9 @@ export default function Booking() {
     // TODOS os slots do horário de funcionamento (para mostrar os "brancos")
     const allBusinessSlots = getAllBusinessSlots(selectedDate);
 
-    const { data: booked, error: bookedError } = await supabase.rpc('get_barber_booked_slots', {
+    const { data: booked, error: bookedError } = isAgendaDemo
+      ? { data: [], error: null }
+      : await supabase.rpc('get_barber_booked_slots', {
       p_barber_id: selectedBarber.id,
       p_appointment_date: dateString,
     });
@@ -453,6 +459,10 @@ export default function Booking() {
   };
 
   const createBooking = async (paymentMethod: 'local' | 'pix') => {
+    if (isAgendaDemo) {
+      toast({ title: 'Demonstração local', description: 'Este catálogo é fictício. Nenhum agendamento foi enviado ou salvo.' });
+      return;
+    }
     const payload = validateBookingForm();
     if (!payload || !selectedBarber) return;
 
@@ -586,6 +596,8 @@ export default function Booking() {
     return !dayHours?.is_open;
   };
 
+  if (!brandingLoading && !settings.storeAccountId && !isAgendaDemo) return <Layout><div className="container px-4 py-8"><EmptyState title="Qual é a sua barbearia?" description="Abra o link de agendamento enviado pela sua barbearia para escolher um serviço e um horário." /></div></Layout>;
+
   return (
     <Layout>
       <PixPaymentDialog
@@ -597,16 +609,16 @@ export default function Booking() {
         loading={submitting}
         onConfirmSent={() => void createBooking('pix')}
       />
-      <div className="container mx-auto px-4 py-12">
+      <div className="booking-flow container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="max-w-3xl mx-auto"
         >
           <h1 className="font-serif text-3xl md:text-4xl font-bold text-center mb-2">
-            Agendar Horário
+            Agendar <span className="text-primary">horário.</span>
           </h1>
-          <p className="text-muted-foreground text-center mb-8">
+          <p className="booking-description text-muted-foreground mb-8">
             {isQueueFlow
               ? `Escolha ${settings.serviceLabel.toLowerCase()} e entre na fila de atendimento`
               : `Escolha ${settings.serviceLabel.toLowerCase()}, ${settings.professionalLabel.toLowerCase()} e horário ideal para você`}
@@ -953,7 +965,7 @@ export default function Booking() {
                                         ? 'bg-background border-border text-muted-foreground cursor-not-allowed opacity-50'
                                         : selectedTime === slot
                                           ? 'bg-primary text-primary-foreground border-primary'
-                                          : 'bg-emerald-500/10 border-emerald-500/30 text-foreground hover:border-emerald-500/60'
+                                          : 'bg-primary/10 border-emerald-500/30 text-foreground hover:border-emerald-500/60'
                                   )}
                                 >
                                   <span className={cn(

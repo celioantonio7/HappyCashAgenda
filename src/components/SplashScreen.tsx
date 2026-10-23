@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { CalendarDays, CreditCard, QrCode, Smartphone } from "lucide-react";
+import { CalendarDays, CreditCard, QrCode, Smartphone } from "@/components/animated-icons";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { useAgendaBranding } from "@/hooks/useAgendaBranding";
 

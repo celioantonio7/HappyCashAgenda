@@ -10,10 +10,378 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.18"
   }
   public: {
     Tables: {
+      agenda_business_settings: {
+        Row: {
+          about_image_position_x: number
+          about_image_position_y: number
+          about_image_scale: number
+          about_image_url: string | null
+          about_text: string | null
+          about_title: string | null
+          accent_hsl: string
+          address: string | null
+          admin_whatsapp: string | null
+          business_type: string
+          cancellation_notice_hours: number
+          closed_message: string | null
+          display_name: string
+          facebook_url: string | null
+          hero_image_position_x: number
+          hero_image_position_y: number
+          hero_image_scale: number
+          hero_image_url: string | null
+          hero_subtitle: string | null
+          hero_title: string | null
+          id: string
+          instagram_url: string | null
+          location_image_url: string | null
+          logo_size: number
+          logo_url: string | null
+          owner_user_id: string
+          pix_key: string | null
+          pix_merchant_name: string | null
+          primary_hsl: string
+          professional_label: string
+          public_booking_enabled: boolean
+          public_queue_visible: boolean
+          reminder_24h_enabled: boolean
+          reminder_2h_enabled: boolean
+          reminder_30m_enabled: boolean
+          reminder_enabled: boolean
+          reschedule_notice_hours: number
+          service_label: string
+          service_mode: string
+          slug: string
+          sound_cancellation_enabled: boolean
+          sound_completion_enabled: boolean
+          sound_new_appointment_enabled: boolean
+          sound_notifications_enabled: boolean
+          sound_reschedule_enabled: boolean
+          store_account_id: string
+          success_hsl: string
+          tagline: string
+          team_image_url: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          about_image_position_x?: number
+          about_image_position_y?: number
+          about_image_scale?: number
+          about_image_url?: string | null
+          about_text?: string | null
+          about_title?: string | null
+          accent_hsl?: string
+          address?: string | null
+          admin_whatsapp?: string | null
+          business_type?: string
+          cancellation_notice_hours?: number
+          closed_message?: string | null
+          display_name: string
+          facebook_url?: string | null
+          hero_image_position_x?: number
+          hero_image_position_y?: number
+          hero_image_scale?: number
+          hero_image_url?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          instagram_url?: string | null
+          location_image_url?: string | null
+          logo_size?: number
+          logo_url?: string | null
+          owner_user_id: string
+          pix_key?: string | null
+          pix_merchant_name?: string | null
+          primary_hsl?: string
+          professional_label?: string
+          public_booking_enabled?: boolean
+          public_queue_visible?: boolean
+          reminder_24h_enabled?: boolean
+          reminder_2h_enabled?: boolean
+          reminder_30m_enabled?: boolean
+          reminder_enabled?: boolean
+          reschedule_notice_hours?: number
+          service_label?: string
+          service_mode?: string
+          slug: string
+          sound_cancellation_enabled?: boolean
+          sound_completion_enabled?: boolean
+          sound_new_appointment_enabled?: boolean
+          sound_notifications_enabled?: boolean
+          sound_reschedule_enabled?: boolean
+          store_account_id: string
+          success_hsl?: string
+          tagline?: string
+          team_image_url?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          about_image_position_x?: number
+          about_image_position_y?: number
+          about_image_scale?: number
+          about_image_url?: string | null
+          about_text?: string | null
+          about_title?: string | null
+          accent_hsl?: string
+          address?: string | null
+          admin_whatsapp?: string | null
+          business_type?: string
+          cancellation_notice_hours?: number
+          closed_message?: string | null
+          display_name?: string
+          facebook_url?: string | null
+          hero_image_position_x?: number
+          hero_image_position_y?: number
+          hero_image_scale?: number
+          hero_image_url?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          instagram_url?: string | null
+          location_image_url?: string | null
+          logo_size?: number
+          logo_url?: string | null
+          owner_user_id?: string
+          pix_key?: string | null
+          pix_merchant_name?: string | null
+          primary_hsl?: string
+          professional_label?: string
+          public_booking_enabled?: boolean
+          public_queue_visible?: boolean
+          reminder_24h_enabled?: boolean
+          reminder_2h_enabled?: boolean
+          reminder_30m_enabled?: boolean
+          reminder_enabled?: boolean
+          reschedule_notice_hours?: number
+          service_label?: string
+          service_mode?: string
+          slug?: string
+          sound_cancellation_enabled?: boolean
+          sound_completion_enabled?: boolean
+          sound_new_appointment_enabled?: boolean
+          sound_notifications_enabled?: boolean
+          sound_reschedule_enabled?: boolean
+          store_account_id?: string
+          success_hsl?: string
+          tagline?: string
+          team_image_url?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_business_settings_store_account_id_fkey"
+            columns: ["store_account_id"]
+            isOneToOne: true
+            referencedRelation: "store_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_clients: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          owner_user_id: string
+          phone: string
+          store_account_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          owner_user_id: string
+          phone?: string
+          store_account_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          owner_user_id?: string
+          phone?: string
+          store_account_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_clients_store_account_id_fkey"
+            columns: ["store_account_id"]
+            isOneToOne: false
+            referencedRelation: "store_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_product_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          line_total: number
+          order_id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_total: number
+          order_id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_total?: number
+          order_id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_product_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_product_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agenda_product_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_product_orders: {
+        Row: {
+          client_id: string | null
+          client_name: string
+          client_phone: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          order_status: string
+          owner_user_id: string
+          payment_method: string
+          payment_status: string
+          store_account_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          client_name: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_status?: string
+          owner_user_id: string
+          payment_method?: string
+          payment_status?: string
+          store_account_id: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          client_name?: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_status?: string
+          owner_user_id?: string
+          payment_method?: string
+          payment_status?: string
+          store_account_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_product_orders_store_account_id_fkey"
+            columns: ["store_account_id"]
+            isOneToOne: false
+            referencedRelation: "store_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_products: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          owner_user_id: string
+          price: number
+          stock_quantity: number
+          store_account_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          owner_user_id: string
+          price?: number
+          stock_quantity?: number
+          store_account_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          owner_user_id?: string
+          price?: number
+          stock_quantity?: number
+          store_account_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_products_store_account_id_fkey"
+            columns: ["store_account_id"]
+            isOneToOne: false
+            referencedRelation: "store_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_services: {
         Row: {
           added_at: string
@@ -50,12 +418,20 @@ export type Database = {
             referencedRelation: "appointments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "appointment_services_store_account_id_fkey"
+            columns: ["store_account_id"]
+            isOneToOne: false
+            referencedRelation: "store_accounts"
+            referencedColumns: ["id"]
+          },
         ]
       }
       appointments: {
         Row: {
           appointment_date: string
           appointment_time: string
+          appointment_type: string
           barber_id: string
           client_id: string | null
           client_name: string
@@ -75,6 +451,7 @@ export type Database = {
         Insert: {
           appointment_date: string
           appointment_time: string
+          appointment_type?: string
           barber_id: string
           client_id?: string | null
           client_name: string
@@ -94,6 +471,7 @@ export type Database = {
         Update: {
           appointment_date?: string
           appointment_time?: string
+          appointment_type?: string
           barber_id?: string
           client_id?: string | null
           client_name?: string
@@ -123,6 +501,13 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_store_account_id_fkey"
+            columns: ["store_account_id"]
+            isOneToOne: false
+            referencedRelation: "store_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -179,7 +564,15 @@ export type Database = {
           user_id?: string | null
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "barbers_store_account_id_fkey"
+            columns: ["store_account_id"]
+            isOneToOne: false
+            referencedRelation: "store_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_hours: {
         Row: {
@@ -209,7 +602,15 @@ export type Database = {
           owner_user_id?: string | null
           store_account_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "business_hours_store_account_id_fkey"
+            columns: ["store_account_id"]
+            isOneToOne: false
+            referencedRelation: "store_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_locations: {
         Row: {
@@ -254,7 +655,15 @@ export type Database = {
           store_account_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "business_locations_store_account_id_fkey"
+            columns: ["store_account_id"]
+            isOneToOne: false
+            referencedRelation: "store_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clients: {
         Row: {
@@ -264,7 +673,9 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          owner_user_id: string | null
           phone: string | null
+          store_account_id: string | null
           updated_at: string
         }
         Insert: {
@@ -274,7 +685,9 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          owner_user_id?: string | null
           phone?: string | null
+          store_account_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -284,10 +697,20 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          owner_user_id?: string | null
           phone?: string | null
+          store_account_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_store_account_id_fkey"
+            columns: ["store_account_id"]
+            isOneToOne: false
+            referencedRelation: "store_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loyalty_programs: {
         Row: {
@@ -335,6 +758,13 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_programs_store_account_id_fkey"
+            columns: ["store_account_id"]
+            isOneToOne: false
+            referencedRelation: "store_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -387,6 +817,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "loyalty_progress_agenda_client_id_fkey"
+            columns: ["agenda_client_id"]
+            isOneToOne: false
+            referencedRelation: "agenda_clients"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "loyalty_progress_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
@@ -400,181 +837,11 @@ export type Database = {
             referencedRelation: "loyalty_programs"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      agenda_clients: {
-        Row: {
-          created_at: string
-          email: string | null
-          id: string
-          name: string
-          notes: string | null
-          owner_user_id: string
-          phone: string
-          store_account_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          email?: string | null
-          id?: string
-          name: string
-          notes?: string | null
-          owner_user_id?: string
-          phone?: string
-          store_account_id?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          email?: string | null
-          id?: string
-          name?: string
-          notes?: string | null
-          owner_user_id?: string
-          phone?: string
-          store_account_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      agenda_products: {
-        Row: {
-          category: string | null
-          created_at: string
-          description: string | null
-          id: string
-          image_url: string | null
-          is_active: boolean
-          name: string
-          owner_user_id: string
-          price: number
-          stock_quantity: number
-          store_account_id: string
-          updated_at: string
-        }
-        Insert: {
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean
-          name: string
-          owner_user_id?: string
-          price?: number
-          stock_quantity?: number
-          store_account_id?: string
-          updated_at?: string
-        }
-        Update: {
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean
-          name?: string
-          owner_user_id?: string
-          price?: number
-          stock_quantity?: number
-          store_account_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      agenda_product_orders: {
-        Row: {
-          client_id: string | null
-          client_name: string
-          client_phone: string | null
-          created_at: string
-          id: string
-          notes: string | null
-          order_status: string
-          owner_user_id: string
-          payment_method: string
-          payment_status: string
-          store_account_id: string
-          total_amount: number
-          updated_at: string
-        }
-        Insert: {
-          client_id?: string | null
-          client_name: string
-          client_phone?: string | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          order_status?: string
-          owner_user_id: string
-          payment_method?: string
-          payment_status?: string
-          store_account_id: string
-          total_amount?: number
-          updated_at?: string
-        }
-        Update: {
-          client_id?: string | null
-          client_name?: string
-          client_phone?: string | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          order_status?: string
-          owner_user_id?: string
-          payment_method?: string
-          payment_status?: string
-          store_account_id?: string
-          total_amount?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      agenda_product_order_items: {
-        Row: {
-          created_at: string
-          id: string
-          line_total: number
-          order_id: string
-          product_id: string
-          product_name: string
-          quantity: number
-          unit_price: number
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          line_total: number
-          order_id: string
-          product_id: string
-          product_name: string
-          quantity: number
-          unit_price: number
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          line_total?: number
-          order_id?: string
-          product_id?: string
-          product_name?: string
-          quantity?: number
-          unit_price?: number
-        }
-        Relationships: [
           {
-            foreignKeyName: "agenda_product_order_items_order_id_fkey"
-            columns: ["order_id"]
+            foreignKeyName: "loyalty_progress_store_account_id_fkey"
+            columns: ["store_account_id"]
             isOneToOne: false
-            referencedRelation: "agenda_product_orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "agenda_product_order_items_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "agenda_products"
+            referencedRelation: "store_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -588,8 +855,10 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           name: string
+          owner_user_id: string | null
           price: number
           stock_quantity: number
+          store_account_id: string | null
           updated_at: string
         }
         Insert: {
@@ -600,8 +869,10 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           name: string
+          owner_user_id?: string | null
           price?: number
           stock_quantity?: number
+          store_account_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -612,11 +883,21 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           name?: string
+          owner_user_id?: string | null
           price?: number
           stock_quantity?: number
+          store_account_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_store_account_id_fkey"
+            columns: ["store_account_id"]
+            isOneToOne: false
+            referencedRelation: "store_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -624,24 +905,33 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          owner_user_id: string | null
           phone: string | null
           updated_at: string
+          user_id: string | null
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           full_name: string
           id: string
+          owner_user_id?: string | null
           phone?: string | null
           updated_at?: string
+          user_id?: string | null
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           full_name?: string
           id?: string
+          owner_user_id?: string | null
           phone?: string | null
           updated_at?: string
+          user_id?: string | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -681,6 +971,68 @@ export type Database = {
           price?: number
           store_account_id?: string | null
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_store_account_id_fkey"
+            columns: ["store_account_id"]
+            isOneToOne: false
+            referencedRelation: "store_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_accounts: {
+        Row: {
+          created_at: string
+          id: string
+          owner_user_id: string
+          product_context: string
+          test_access_ends_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_user_id: string
+          product_context?: string
+          test_access_ends_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_user_id?: string
+          product_context?: string
+          test_access_ends_at?: string | null
+        }
+        Relationships: []
+      }
+      store_subscriptions: {
+        Row: {
+          created_at: string
+          current_period_ends_at: string | null
+          id: string
+          owner_user_id: string
+          plan_id: string
+          product_context: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_ends_at?: string | null
+          id?: string
+          owner_user_id: string
+          plan_id: string
+          product_context?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          current_period_ends_at?: string | null
+          id?: string
+          owner_user_id?: string
+          plan_id?: string
+          product_context?: string
+          status?: string
         }
         Relationships: []
       }
@@ -747,15 +1099,22 @@ export type Database = {
         }
         Returns: boolean
       }
-      create_barber_appointment: {
+      cancel_client_appointment: {
+        Args: { p_appointment_id: string }
+        Returns: boolean
+      }
+      confirm_agenda_appointment_payment: {
+        Args: { p_appointment_id: string }
+        Returns: boolean
+      }
+      create_agenda_product_order: {
         Args: {
-          p_appointment_date: string
-          p_appointment_time: string
-          p_barber_id: string
           p_client_name: string
-          p_client_phone: string
-          p_service_id: string
-          p_session_token: string
+          p_client_phone?: string
+          p_items: Json
+          p_notes?: string
+          p_payment_method?: string
+          p_store_account_id: string
         }
         Returns: string
       }
@@ -772,14 +1131,26 @@ export type Database = {
         }
         Returns: string
       }
-      create_agenda_product_order: {
+      create_barber_appointment: {
         Args: {
+          p_appointment_date: string
+          p_appointment_time: string
+          p_barber_id: string
           p_client_name: string
-          p_client_phone?: string | null
-          p_items: Json
-          p_notes?: string | null
+          p_client_phone: string
+          p_service_id: string
+          p_session_token: string
+        }
+        Returns: string
+      }
+      create_walk_in_queue_entry: {
+        Args: {
+          p_barber_id: string
+          p_client_name: string
+          p_client_phone?: string
+          p_notes?: string
           p_payment_method?: string
-          p_store_account_id: string
+          p_service_ids: string[]
         }
         Returns: string
       }
@@ -831,10 +1202,29 @@ export type Database = {
           duration_minutes: number
         }[]
       }
+      get_public_waiting_queue: {
+        Args: { p_store_account_id: string }
+        Returns: {
+          barber_name: string
+          client_name: string
+          created_at: string
+          id: string
+          position: number
+          service_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
+        }
+        Returns: boolean
+      }
+      reschedule_client_appointment: {
+        Args: {
+          p_appointment_date: string
+          p_appointment_id: string
+          p_appointment_time: string
         }
         Returns: boolean
       }
@@ -845,6 +1235,10 @@ export type Database = {
       verify_barber_session: {
         Args: { p_barber_id: string; p_session_token: string }
         Returns: boolean
+      }
+      verify_email_phone: {
+        Args: { p_email: string; p_phone: string }
+        Returns: string
       }
     }
     Enums: {
@@ -865,12 +1259,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -894,11 +1288,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -919,11 +1313,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -944,11 +1338,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -961,11 +1355,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

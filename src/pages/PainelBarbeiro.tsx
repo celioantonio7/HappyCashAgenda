@@ -1,3 +1,4 @@
+import { OperationalBarChart, OperationalPieChart, chartPalette } from '@/components/app/OperationalCharts';
 /**
  * ==============================================================
  * PÁGINA: BarberDashboard (Painel do Barbeiro)
@@ -24,7 +25,7 @@ import {
   Calendar, Clock, TrendingUp, Loader2, DollarSign,
   CheckCircle, XCircle, AlertCircle, Scissors, Plus, UserPlus, Bell,
   Wifi, WifiOff, Info, Trophy
-} from 'lucide-react';
+} from '@/components/animated-icons';
 import { format, startOfMonth, endOfMonth, isWithinInterval, subDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,12 +69,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell } from 'recharts';
+
+
 import { useBusinessHours } from '@/hooks/useBusinessHours';
 
 interface Appointment {
@@ -141,7 +138,7 @@ type BookedSlotRpcRow = {
   duration_minutes: number | string | null;
 };
 
-const CHART_COLORS = ['hsl(220, 60%, 35%)', 'hsl(38, 80%, 55%)', 'hsl(160, 60%, 45%)', 'hsl(280, 60%, 50%)', 'hsl(350, 60%, 50%)'];
+const CHART_COLORS = chartPalette;
 
 const clearBarberSession = () => {
   sessionStorage.removeItem('barber_id');
@@ -857,7 +854,7 @@ export default function BarberDashboard() {
                 <h1 className="font-serif text-2xl font-bold">Bem-vindo, {barberData?.name}!</h1>
                 <div className="flex items-center gap-2 mt-1">
                   {realtimeActive ? (
-                    <span className="flex items-center gap-1 text-xs text-emerald-600">
+                    <span className="flex items-center gap-1 text-xs text-primary">
                       <Wifi className="w-3 h-3" /> Realtime ativo
                     </span>
                   ) : barberIdFromSession ? (
@@ -910,12 +907,12 @@ export default function BarberDashboard() {
             <Card>
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-emerald-500/10 rounded-full shrink-0">
-                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" />
+                  <div className="p-2 bg-primary/10 rounded-full shrink-0">
+                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs text-muted-foreground truncate">Concluídos</p>
-                    <p className="text-xl sm:text-2xl font-bold text-emerald-600">{completedAppointments.length}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-primary">{completedAppointments.length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -944,14 +941,7 @@ export default function BarberDashboard() {
                 <CardTitle className="font-serif text-sm sm:text-base">Últimos 7 dias</CardTitle>
               </CardHeader>
               <CardContent className="px-2 sm:px-6 pb-3">
-                <ChartContainer config={chartConfig} className="h-[120px] sm:h-[150px] w-full">
-                  <BarChart data={getLast7DaysData()} margin={{ left: 0, right: 5, top: 5, bottom: 0 }}>
-                    <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={10} tickMargin={3} />
-                    <YAxis tickLine={false} axisLine={false} fontSize={10} width={20} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="servicos" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ChartContainer>
+                <OperationalBarChart data={getLast7DaysData()} measure="servicos" />
               </CardContent>
             </Card>
 
@@ -965,23 +955,7 @@ export default function BarberDashboard() {
                   <p className="text-center text-muted-foreground py-4 text-sm">Nenhum serviço concluído.</p>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <ChartContainer config={chartConfig} className="h-[100px] w-[100px] shrink-0">
-                      <PieChart>
-                        <Pie
-                          data={getServiceDistribution()}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={20}
-                          outerRadius={40}
-                          dataKey="value"
-                        >
-                          {getServiceDistribution().map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                      </PieChart>
-                    </ChartContainer>
+                    <OperationalPieChart data={getServiceDistribution()} />
                     <div className="flex-1 space-y-1 min-w-0">
                       {getServiceDistribution().slice(0, 4).map((item, index) => (
                         <div key={item.name} className="flex items-center justify-between gap-1">
@@ -1179,7 +1153,7 @@ export default function BarberDashboard() {
                               {extras.length > 0 && (
                                 <p className="text-xs text-muted-foreground">{totalServices} serviços</p>
                               )}
-                              <p className="text-xs text-emerald-600">+R$ {totalCommission.toFixed(2)} comissão</p>
+                              <p className="text-xs text-primary">+R$ {totalCommission.toFixed(2)} comissão</p>
                             </div>
                           </div>
                         );

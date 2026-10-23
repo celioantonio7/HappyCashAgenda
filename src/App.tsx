@@ -1,3 +1,5 @@
+import { lazy, Suspense } from "react";
+import { PwaStatus } from "@/components/app/PwaStatus";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,15 +11,18 @@ import { ThemeProvider } from "@/hooks/useTheme";
 import { CartProvider } from "@/hooks/useCart";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import Seo from "@/components/Seo";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import ResetPassword from "./pages/ResetPassword";
-import Agendamento from "./pages/Agendamento";
-import MeusAgendamentos from "./pages/MeusAgendamentos";
-import Painel from "./pages/Painel";
-import PainelBarbeiro from "./pages/PainelBarbeiro";
-import Produtos from "./pages/Produtos";
-import NotFound from "./pages/NotFound";
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Agendamento = lazy(() => import("./pages/Agendamento"));
+const MeusAgendamentos = lazy(() => import("./pages/MeusAgendamentos"));
+const Painel = lazy(() => import("./pages/Painel"));
+const PainelBarbeiro = lazy(() => import("./pages/PainelBarbeiro"));
+const Produtos = lazy(() => import("./pages/Produtos"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Perfil = lazy(() => import("./pages/Perfil"));
+const Feed = lazy(() => import("./pages/Feed"));
+const Assinatura = lazy(() => import("./pages/Assinatura"));
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -28,13 +33,18 @@ const App = () => (
           <AgendaBrandingProvider>
             <CartProvider>
               <TooltipProvider>
+                <PwaStatus />
                 <Toaster />
                 <Sonner />
                 <CartDrawer />
                 <Seo />
+                <Suspense fallback={<main className="min-h-[60svh] grid place-items-center text-sm text-muted-foreground" aria-busy="true">Abrindo sua agenda…</main>}>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/perfil" element={<Perfil />} />
+                  <Route path="/feed" element={<Feed />} />
+                  <Route path="/assinatura" element={<Assinatura />} />
                   <Route path="/agendamento" element={<Agendamento />} />
                   <Route
                     path="/meus-agendamentos"
@@ -57,12 +67,16 @@ const App = () => (
                   <Route path="/products" element={<Produtos />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/:businessSlug" element={<Index />} />
+                  <Route path="/:businessSlug/perfil" element={<Perfil />} />
+                  <Route path="/:businessSlug/feed" element={<Feed />} />
+                  <Route path="/:businessSlug/assinatura" element={<Assinatura />} />
                   <Route path="/:businessSlug/agendamento" element={<Agendamento />} />
                   <Route path="/:businessSlug/login" element={<Login />} />
                   <Route path="/:businessSlug/meus-agendamentos" element={<MeusAgendamentos />} />
                   <Route path="/:businessSlug/produtos" element={<Produtos />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                </Suspense>
               </TooltipProvider>
             </CartProvider>
           </AgendaBrandingProvider>

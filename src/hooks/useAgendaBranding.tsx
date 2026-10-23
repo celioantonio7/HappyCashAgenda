@@ -1,3 +1,4 @@
+import { isAgendaDemo } from "@/lib/agendaDemo";
 import {
   createContext,
   ReactNode,
@@ -133,6 +134,7 @@ type AgendaBusinessSettingsRow = {
 };
 
 type AgendaBusinessSettingsUpsert = {
+  store_account_id: string;
   owner_user_id: string;
   slug: string;
   display_name: string;
@@ -228,8 +230,8 @@ const DEFAULT_BRANDING: AgendaBrandingSettings = {
   instagramUrl: "",
   pixKey: "",
   pixMerchantName: "",
-  primaryHsl: "258 84% 58%",
-  accentHsl: "44 96% 56%",
+  primaryHsl: "82 100% 61%",
+  accentHsl: "82 70% 50%",
   successHsl: "151 74% 43%",
   publicBookingEnabled: true,
   serviceMode: "appointment",
@@ -376,8 +378,8 @@ const rowToSettings = (row: AgendaBusinessSettingsRow): AgendaBrandingSettings =
   instagramUrl: row.instagram_url ?? "",
   pixKey: row.pix_key ?? "",
   pixMerchantName: row.pix_merchant_name ?? row.display_name,
-  primaryHsl: row.primary_hsl,
-  accentHsl: row.accent_hsl,
+  primaryHsl: row.primary_hsl === "258 84% 58%" ? DEFAULT_BRANDING.primaryHsl : row.primary_hsl,
+  accentHsl: row.accent_hsl === "44 96% 56%" ? DEFAULT_BRANDING.accentHsl : row.accent_hsl,
   successHsl: row.success_hsl,
   publicBookingEnabled: row.public_booking_enabled,
   serviceMode: sanitizeServiceMode(row.service_mode),
@@ -399,6 +401,7 @@ const settingsToUpsert = (
   settings: AgendaBrandingSettings,
   ownerUserId: string,
 ): AgendaBusinessSettingsUpsert => ({
+  store_account_id: settings.storeAccountId,
   owner_user_id: ownerUserId,
   slug: settings.slug,
   display_name: settings.displayName,
@@ -506,15 +509,15 @@ const writePreview = (settings: AgendaBrandingSettings) => {
 const applyBrandingToDocument = (settings: AgendaBrandingSettings) => {
   if (!isBrowser()) return;
   const root = document.documentElement;
-  root.style.setProperty("--primary", settings.primaryHsl);
-  root.style.setProperty("--ring", settings.primaryHsl);
-  root.style.setProperty("--accent", settings.accentHsl);
+  root.style.setProperty("--brand-primary", settings.primaryHsl);
+  
+  root.style.setProperty("--brand-accent", settings.accentHsl);
   root.style.setProperty("--gold", settings.accentHsl);
-  root.style.setProperty("--success", settings.successHsl);
+  
 };
 
 export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, ownerUserId } = useAuth();
   const location = useSyncExternalStore(subscribeAppLocation, getAppLocationSnapshot, getAppLocationSnapshot);
   const [settings, setSettings] = useState<AgendaBrandingSettings>(() => readPreview() ?? DEFAULT_BRANDING);
   const [loading, setLoading] = useState(true);
@@ -529,10 +532,15 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
     ) {
       return "";
     }
-    return requestedSlug || resolveAgendaPublicSlug(location.pathname, location.search);
+    return requestedSlug || resolveAgendaPublicSlug(location.pathname, location.search) || localStorage.getItem("happycash:agenda:last-business") || "";
   }, [isAdmin, location.pathname, location.search, user?.id]);
 
   const loadSettings = useCallback(async () => {
+    if (isAgendaDemo && !isAdmin) {
+      setSettings({ ...DEFAULT_BRANDING, slug: publicSlug || DEFAULT_BRANDING.slug, displayName: 'Barbearia Demonstração', businessType: 'Barbearia', professionalLabel: 'Barbeiro', serviceLabel: 'Serviço' });
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const publicFallbackSettings = publicSlug ? buildPublicFallbackSettings(publicSlug) : null;
     if (publicFallbackSettings) {
@@ -545,7 +553,7 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
     const scopedQuery = publicSlug
       ? table.select(SETTINGS_COLUMNS_EXTENDED).eq("slug", publicSlug).eq("public_booking_enabled", true)
       : user?.id
-        ? table.select(SETTINGS_COLUMNS_EXTENDED).eq("owner_user_id", user.id)
+        ? table.select(SETTINGS_COLUMNS_EXTENDED).eq("owner_user_id", ownerUserId || user.id)
         : table
             .select(SETTINGS_COLUMNS_EXTENDED)
             .eq("slug", DEFAULT_BRANDING.slug)
@@ -557,7 +565,7 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
       const publicPageQuery = publicSlug
         ? table.select(SETTINGS_COLUMNS_PUBLIC_PAGE).eq("slug", publicSlug).eq("public_booking_enabled", true)
         : user?.id
-          ? table.select(SETTINGS_COLUMNS_PUBLIC_PAGE).eq("owner_user_id", user.id)
+          ? table.select(SETTINGS_COLUMNS_PUBLIC_PAGE).eq("owner_user_id", ownerUserId || user.id)
           : table
               .select(SETTINGS_COLUMNS_PUBLIC_PAGE)
               .eq("slug", DEFAULT_BRANDING.slug)
@@ -569,7 +577,7 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
       const fallbackQuery = publicSlug
         ? table.select(SETTINGS_COLUMNS_BASE).eq("slug", publicSlug).eq("public_booking_enabled", true)
         : user?.id
-          ? table.select(SETTINGS_COLUMNS_BASE).eq("owner_user_id", user.id)
+          ? table.select(SETTINGS_COLUMNS_BASE).eq("owner_user_id", ownerUserId || user.id)
           : table
               .select(SETTINGS_COLUMNS_BASE)
               .eq("slug", DEFAULT_BRANDING.slug)
@@ -580,6 +588,7 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
     if (response.data) {
       const nextSettings = sanitizeSettings(rowToSettings(response.data as AgendaBusinessSettingsRow));
       setSettings(nextSettings);
+      if (publicSlug) localStorage.setItem("happycash:agenda:last-business", nextSettings.slug);
       writePreview(nextSettings);
     } else if (publicFallbackSettings) {
       setSettings(publicFallbackSettings);
@@ -587,7 +596,7 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
     }
 
     setLoading(false);
-  }, [publicSlug, user?.id]);
+  }, [isAdmin, ownerUserId, publicSlug, user?.id]);
 
   useEffect(() => {
     void loadSettings();
@@ -617,6 +626,8 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
         updatePreview(sanitized);
         return { error: null };
       }
+
+      if (!sanitized.storeAccountId) return { error: "Sua conta ainda nao esta vinculada a uma empresa." };
 
       const upsertPayload = settingsToUpsert(sanitized, user.id);
       let response = await supabase
