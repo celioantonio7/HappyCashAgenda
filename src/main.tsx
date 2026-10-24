@@ -8,4 +8,8 @@ import "./index.css";
 import "./design-tokens.css";
 import "./lib/locationStore";
 
+import { configureDisplayMode } from "./lib/displayMode";
+
+configureDisplayMode();
+
 createRoot(document.getElementById("root")!).render(<App />);

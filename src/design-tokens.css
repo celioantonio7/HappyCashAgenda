@@ -121,7 +121,7 @@ button:disabled { cursor: not-allowed; }
 @media(max-width:1023px) { .owner-workspace { padding-left:0; } .owner-sidebar { display:none; } .owner-sidebar[data-open=true] { display:flex; box-shadow:0 0 0 100vmax #0009; } .app-topbar { height:68px; padding:0 18px; } .owner-dashboard .grid.grid-cols-2.md\:grid-cols-4 { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:480px) { .auth-card { padding:26px 22px; border-radius:18px; } .auth-brand { margin-bottom:24px; } .app-content > .container { padding:24px 18px; } .app-topbar .brand { font-size:12px; } .page-intro { margin-bottom:24px; } }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; scroll-behavior:auto!important; } }
-@media(min-width:1024px) { .sidebar-collapsed { padding-left:76px; } .sidebar-collapsed .owner-sidebar { width:76px; padding-left:10px; padding-right:10px; } .sidebar-collapsed .owner-sidebar a { justify-content:center; } .sidebar-collapsed .owner-sidebar a span:not(.agenda-icon):not(.brand-mark),.sidebar-collapsed .owner-sidebar h2,.sidebar-collapsed .sidebar-footer button span:not(.agenda-icon) { display:none; } .sidebar-collapsed .owner-sidebar .brand { padding:0 0 28px; } }
+@media(min-width:1024px) { .sidebar-collapsed { padding-left:76px; } .sidebar-collapsed .owner-sidebar { width:76px; padding-left:10px; padding-right:10px; } .sidebar-collapsed .owner-sidebar a { justify-content:center; } .sidebar-collapsed .owner-sidebar .sidebar-label,.sidebar-collapsed .owner-sidebar h2 { display:none; } .sidebar-collapsed .owner-sidebar .brand { padding:0 0 28px; } }
 h1,h2,h3,h4 { font-family: 'Inter', sans-serif; }
 :root { --chart-background:#121614; --chart-foreground:#f5f7f4; --chart-muted:#a1aba3; --chart-muted-foreground:#a1aba3; --chart-border:#2a332d; --chart-line-primary:hsl(var(--primary)); --chart-line-secondary:hsl(var(--accent)); --chart-crosshair:#667168; --chart-label:#a1aba3; }
 .owner-kpis { display:grid; grid-template-columns:1.3fr 1fr 1fr 1.3fr; gap:14px; margin-bottom:28px; }
@@ -602,7 +602,7 @@ body:has(.app-frame) { overflow:hidden; }
 .app-scroll-hint { flex-shrink:0; }
 
 /* Keep touch scrolling while suppressing pinch and double-tap page zoom. */
-html { touch-action:pan-x pan-y; }
+html[data-app-display="standalone"] { touch-action:pan-x pan-y; }
 @media (pointer:coarse) {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
   textarea, select, [contenteditable="true"], [role="combobox"] {
