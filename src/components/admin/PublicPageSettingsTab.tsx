@@ -82,7 +82,7 @@ export function PublicPageSettingsTab() {
     }
 
     toast({
-      title: "Pagina publica salva",
+      title: "Configurações salvas",
       description: "Logo, textos, redes sociais e Pix da agenda foram atualizados.",
     });
     setEditing(false);
@@ -124,106 +124,15 @@ export function PublicPageSettingsTab() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Palette className="h-5 w-5" />
-          Configuracoes da pagina publica
+          Agendamento e contato
         </CardTitle>
         <CardDescription>
-          Personalize a landing da sua empresa. Link publico:{" "}
+          Configure atendimento, contato e preferências. Link de agendamento:{" "}
           <span className="font-medium text-foreground">{publicUrl}</span>
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2">
-        <ImageUploadField
-          label="Logotipo"
-          value={draft.logoUrl}
-          uploading={uploadingField === "logoUrl"}
-          onPick={(file) => void handleUpload("logoUrl", file)}
-          imageStyle={{ objectFit: "contain" }}
-        />
-        <ImageUploadField
-          label="Foto de fundo (hero)"
-          value={draft.heroImageUrl}
-          uploading={uploadingField === "heroImageUrl"}
-          onPick={(file) => void handleUpload("heroImageUrl", file)}
-          imageStyle={{
-            objectPosition: `${draft.heroImagePositionX}% ${draft.heroImagePositionY}%`,
-            transform: `scale(${draft.heroImageScale})`,
-            transformOrigin: `${draft.heroImagePositionX}% ${draft.heroImagePositionY}%`,
-          }}
-        />
-        <ImageUploadField
-          label="Imagem sobre nos"
-          value={draft.aboutImageUrl}
-          uploading={uploadingField === "aboutImageUrl"}
-          onPick={(file) => void handleUpload("aboutImageUrl", file)}
-          imageStyle={{
-            objectPosition: `${draft.aboutImagePositionX}% ${draft.aboutImagePositionY}%`,
-            transform: `scale(${draft.aboutImageScale})`,
-            transformOrigin: `${draft.aboutImagePositionX}% ${draft.aboutImagePositionY}%`,
-          }}
-        />
-
-        <div className="space-y-3 rounded-lg border p-3">
-          <p className="text-sm font-medium">Tamanho do logo</p>
-          <SliderField
-            label="Tamanho"
-            value={draft.logoSize}
-            min={24}
-            max={64}
-            step={1}
-            onChange={(logoSize) => updateDraft({ logoSize })}
-            format={(value) => `${Math.round(value)}px`}
-          />
-        </div>
-
-        <ImagePositionControls
-          title="Ajuste da foto de fundo"
-          x={draft.heroImagePositionX}
-          y={draft.heroImagePositionY}
-          scale={draft.heroImageScale}
-          onChange={(next) => updateDraft({
-            heroImagePositionX: next.x ?? draft.heroImagePositionX,
-            heroImagePositionY: next.y ?? draft.heroImagePositionY,
-            heroImageScale: next.scale ?? draft.heroImageScale,
-          })}
-        />
-        <ImagePositionControls
-          title="Ajuste da imagem sobre nos"
-          x={draft.aboutImagePositionX}
-          y={draft.aboutImagePositionY}
-          scale={draft.aboutImageScale}
-          onChange={(next) => updateDraft({
-            aboutImagePositionX: next.x ?? draft.aboutImagePositionX,
-            aboutImagePositionY: next.y ?? draft.aboutImagePositionY,
-            aboutImageScale: next.scale ?? draft.aboutImageScale,
-          })}
-        />
-
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="heroTitle">Titulo da pagina inicial</Label>
-          <Input
-            id="heroTitle"
-            value={draft.heroTitle}
-            onChange={(e) => updateDraft({ heroTitle: e.target.value })}
-            placeholder={draft.displayName}
-          />
-        </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="heroSubtitle">Subtitulo</Label>
-          <Textarea
-            id="heroSubtitle"
-            value={draft.heroSubtitle || draft.tagline}
-            onChange={(e) => updateDraft({ heroSubtitle: e.target.value })}
-            rows={2}
-          />
-        </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="closedMessage">Mensagem de fechado</Label>
-          <Input
-            id="closedMessage"
-            value={draft.closedMessage}
-            onChange={(e) => updateDraft({ closedMessage: e.target.value })}
-          />
-        </div>
+      <CardContent className="space-y-3">
+        <details className="settings-disclosure" open><summary>Atendimento</summary><div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-3 rounded-lg border p-3 md:col-span-2">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-primary" />
@@ -259,23 +168,8 @@ export function PublicPageSettingsTab() {
             </div>
           </div>
         </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="aboutTitle">Titulo sobre nos</Label>
-          <Input
-            id="aboutTitle"
-            value={draft.aboutTitle}
-            onChange={(e) => updateDraft({ aboutTitle: e.target.value })}
-          />
-        </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="aboutText">Texto sobre nos</Label>
-          <Textarea
-            id="aboutText"
-            value={draft.aboutText}
-            onChange={(e) => updateDraft({ aboutText: e.target.value })}
-            rows={4}
-          />
-        </div>
+        </div></details>
+        <details className="settings-disclosure" ><summary>Contato, Pix e link</summary><div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="address" className="flex items-center gap-1">
             <MapPin className="h-4 w-4" />
@@ -354,6 +248,8 @@ export function PublicPageSettingsTab() {
           <p className="text-xs text-muted-foreground">{publicUrl}</p>
         </div>
 
+        </div></details>
+        <details className="settings-disclosure" ><summary>Regras de cancelamento e remarcação</summary><div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-3 rounded-lg border p-3 md:col-span-2">
           <p className="text-sm font-medium">Regras do cliente</p>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -384,6 +280,8 @@ export function PublicPageSettingsTab() {
           </div>
         </div>
 
+        </div></details>
+        <details className="settings-disclosure" ><summary>Lembretes</summary><div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-3 rounded-lg border p-3 md:col-span-2">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -434,6 +332,8 @@ export function PublicPageSettingsTab() {
           </div>
         </div>
 
+        </div></details>
+        <details className="settings-disclosure" ><summary>Sons e notificações</summary><div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-3 rounded-lg border p-3 md:col-span-2">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -485,12 +385,127 @@ export function PublicPageSettingsTab() {
           </div>
         </div>
 
-        <div className="md:col-span-2">
+        </div></details>
+        <details className="settings-disclosure" ><summary>Fotos e identidade visual</summary><div className="grid gap-4 md:grid-cols-2">
+        <ImageUploadField
+          label="Logotipo"
+          value={draft.logoUrl}
+          uploading={uploadingField === "logoUrl"}
+          onPick={(file) => void handleUpload("logoUrl", file)}
+          imageStyle={{ objectFit: "contain" }}
+        />
+        <ImageUploadField
+          label="Foto de fundo (hero)"
+          value={draft.heroImageUrl}
+          uploading={uploadingField === "heroImageUrl"}
+          onPick={(file) => void handleUpload("heroImageUrl", file)}
+          imageStyle={{
+            objectPosition: `${draft.heroImagePositionX}% ${draft.heroImagePositionY}%`,
+            transform: `scale(${draft.heroImageScale})`,
+            transformOrigin: `${draft.heroImagePositionX}% ${draft.heroImagePositionY}%`,
+          }}
+        />
+        <ImageUploadField
+          label="Imagem sobre nos"
+          value={draft.aboutImageUrl}
+          uploading={uploadingField === "aboutImageUrl"}
+          onPick={(file) => void handleUpload("aboutImageUrl", file)}
+          imageStyle={{
+            objectPosition: `${draft.aboutImagePositionX}% ${draft.aboutImagePositionY}%`,
+            transform: `scale(${draft.aboutImageScale})`,
+            transformOrigin: `${draft.aboutImagePositionX}% ${draft.aboutImagePositionY}%`,
+          }}
+        />
+
+        <div className="space-y-3 rounded-lg border p-3">
+          <p className="text-sm font-medium">Tamanho do logo</p>
+          <SliderField
+            label="Tamanho"
+            value={draft.logoSize}
+            min={24}
+            max={64}
+            step={1}
+            onChange={(logoSize) => updateDraft({ logoSize })}
+            format={(value) => `${Math.round(value)}px`}
+          />
+        </div>
+
+        <ImagePositionControls
+          title="Ajuste da foto de fundo"
+          x={draft.heroImagePositionX}
+          y={draft.heroImagePositionY}
+          scale={draft.heroImageScale}
+          onChange={(next) => updateDraft({
+            heroImagePositionX: next.x ?? draft.heroImagePositionX,
+            heroImagePositionY: next.y ?? draft.heroImagePositionY,
+            heroImageScale: next.scale ?? draft.heroImageScale,
+          })}
+        />
+        <ImagePositionControls
+          title="Ajuste da imagem sobre nos"
+          x={draft.aboutImagePositionX}
+          y={draft.aboutImagePositionY}
+          scale={draft.aboutImageScale}
+          onChange={(next) => updateDraft({
+            aboutImagePositionX: next.x ?? draft.aboutImagePositionX,
+            aboutImagePositionY: next.y ?? draft.aboutImagePositionY,
+            aboutImageScale: next.scale ?? draft.aboutImageScale,
+          })}
+        />
+
+        </div></details>
+        <details className="settings-disclosure" ><summary>Textos da empresa</summary><div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="heroTitle">Titulo da pagina inicial</Label>
+          <Input
+            id="heroTitle"
+            value={draft.heroTitle}
+            onChange={(e) => updateDraft({ heroTitle: e.target.value })}
+            placeholder={draft.displayName}
+          />
+        </div>
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="heroSubtitle">Subtitulo</Label>
+          <Textarea
+            id="heroSubtitle"
+            value={draft.heroSubtitle || draft.tagline}
+            onChange={(e) => updateDraft({ heroSubtitle: e.target.value })}
+            rows={2}
+          />
+        </div>
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="closedMessage">Mensagem de fechado</Label>
+          <Input
+            id="closedMessage"
+            value={draft.closedMessage}
+            onChange={(e) => updateDraft({ closedMessage: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="aboutTitle">Titulo sobre nos</Label>
+          <Input
+            id="aboutTitle"
+            value={draft.aboutTitle}
+            onChange={(e) => updateDraft({ aboutTitle: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="aboutText">Texto sobre nos</Label>
+          <Textarea
+            id="aboutText"
+            value={draft.aboutText}
+            onChange={(e) => updateDraft({ aboutText: e.target.value })}
+            rows={4}
+          />
+        </div>
+        </div></details>
+<div className="form-actions">        <div className="md:col-span-2">
           <Button onClick={handleSave} disabled={saving} className="gap-2">
             <Save className="h-4 w-4" />
-            {saving ? "Salvando..." : "Salvar pagina publica"}
+            {saving ? "Salvando..." : "Salvar configurações"}
           </Button>
         </div>
+</div>
       </CardContent>
     </Card>
   );

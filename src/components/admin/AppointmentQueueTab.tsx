@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { ListMore } from '@/components/app/ListMore';
+import { useMemo, useState } from 'react';
 import { Briefcase, CheckCircle2, Clock, User } from '@/components/animated-icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +40,7 @@ interface AppointmentQueueTabProps {
 }
 
 export function AppointmentQueueTab({ appointments, onConfirmPayment }: AppointmentQueueTabProps) {
+  const [limit,setLimit]=useState(10);
   const { settings } = useAgendaBranding();
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
@@ -81,7 +83,7 @@ export function AppointmentQueueTab({ appointments, onConfirmPayment }: Appointm
         </Card>
       ) : (
         <div className="space-y-3">
-          {queue.map((apt, index) => {
+          {queue.slice(0,limit).map((apt, index) => {
             const isToday = apt.appointment_date === todayStr;
             const isWalkIn = apt.appointment_type === 'queue';
             const allServices = [apt.service?.name, ...apt.extraServices.map(e => e.name)].filter(Boolean);
@@ -142,6 +144,7 @@ export function AppointmentQueueTab({ appointments, onConfirmPayment }: Appointm
           })}
         </div>
       )}
+      <ListMore total={queue.length} shown={limit} onMore={()=>setLimit(n=>n+10)}/>
     </div>
   );
 }

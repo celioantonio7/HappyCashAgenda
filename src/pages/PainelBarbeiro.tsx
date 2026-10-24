@@ -1,4 +1,7 @@
-import { OperationalBarChart, OperationalPieChart, chartPalette } from '@/components/app/OperationalCharts';
+import { Gauge } from '@/components/bklit/gauge/gauge';
+import { formatCurrency } from '@/lib/formatCurrency';
+import { ListMore } from '@/components/app/ListMore';
+import { OperationalBarChart, OperationalPieChart } from '@/components/app/OperationalCharts';
 /**
  * ==============================================================
  * PÁGINA: BarberDashboard (Painel do Barbeiro)
@@ -138,7 +141,7 @@ type BookedSlotRpcRow = {
   duration_minutes: number | string | null;
 };
 
-const CHART_COLORS = chartPalette;
+
 
 const clearBarberSession = () => {
   sessionStorage.removeItem('barber_id');
@@ -150,6 +153,11 @@ const clearBarberSession = () => {
 const getBarberSessionToken = () => sessionStorage.getItem('barber_session_token') || '';
 
 export default function BarberDashboard() {
+  const [dashboardSection,setDashboardSection]=useState<'agenda'|'performance'|'goals'>('agenda');
+  const [listLimit,setListLimit]=useState(10);
+  const [dayFilter,setDayFilter]=useState('today');
+  const [personalAvatar,setPersonalAvatar]=useState<string|null>(null);
+  const [appointmentTab,setAppointmentTab]=useState('scheduled');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [barberData, setBarberData] = useState<BarberData | null>(null);
   const [services, setServices] = useState<Service[]>([]);
@@ -179,6 +187,12 @@ export default function BarberDashboard() {
   const [cancelLoading, setCancelLoading] = useState(false);
 
   const { user, loading: authLoading } = useAuth();
+  useEffect(()=>{
+    if(!user?.id){setPersonalAvatar(null);return;}
+    let active=true;
+    void supabase.from('profiles').select('avatar_url').eq('user_id',user.id).maybeSingle().then(({data})=>{if(active)setPersonalAvatar(data?.avatar_url||null);});
+    return()=>{active=false;};
+  },[user?.id]);
   const { settings } = useAgendaBranding();
   const { toast } = useToast();
   const { requestPermission, sendNotification, permission } = usePushNotifications();
@@ -565,6 +579,7 @@ export default function BarberDashboard() {
 
   const completedAppointments = monthlyAppointments.filter(a => a.status === 'completed');
   const scheduledAppointments = appointments.filter(a => a.status === 'scheduled');
+  const visibleScheduled=scheduledAppointments.filter(a=>dayFilter==='all'||a.appointment_date===format(addDays(new Date(),dayFilter==='tomorrow'?1:0),'yyyy-MM-dd')).sort((a,b)=>a.appointment_date.localeCompare(b.appointment_date)||a.appointment_time.localeCompare(b.appointment_time));
   const cancelledAppointments = monthlyAppointments.filter(a => a.status === 'cancelled');
 
   // Total revenue: soma do serviço principal + adicionais (apenas concluídos)
@@ -589,7 +604,7 @@ export default function BarberDashboard() {
         a => a.appointment_date === dateStr && a.status === 'completed'
       );
       data.push({
-        name: format(date, 'EEE', { locale: ptBR }),
+        name: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][date.getDay()],
         servicos: dayAppointments.length,
       });
     }
@@ -831,18 +846,18 @@ export default function BarberDashboard() {
 
   return (
     <Layout>
-      <div className="container mx-auto px-3 sm:px-4 py-6 max-w-4xl">
+      <div className="staff-dashboard container mx-auto px-4 py-5">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+          <div className="staff-greeting flex items-center justify-between mb-4 flex-wrap gap-3">
             <div className="flex items-center gap-4">
-              {barberData?.photo_url ? (
+              {(personalAvatar || barberData?.photo_url) ? (
                 <img
-                  src={barberData.photo_url}
-                  alt={barberData.name}
+                  src={personalAvatar || barberData?.photo_url || ''}
+                  alt={barberData?.name || 'Sua foto'}
                   className="w-16 h-16 rounded-full object-cover border-2 border-primary"
                 />
               ) : (
@@ -851,7 +866,7 @@ export default function BarberDashboard() {
                 </div>
               )}
               <div>
-                <h1 className="font-serif text-2xl font-bold">Bem-vindo, {barberData?.name}!</h1>
+                <h1 className="font-serif text-2xl font-bold">Olá, {barberData?.name?.split(' ')[0]}!</h1>
                 <div className="flex items-center gap-2 mt-1">
                   {realtimeActive ? (
                     <span className="flex items-center gap-1 text-xs text-primary">
@@ -888,51 +903,11 @@ export default function BarberDashboard() {
             </div>
           </div>
 
-          {/* Stats Cards - Compactos */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
-            <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-accent/10 rounded-full shrink-0">
-                    <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground truncate">Pendentes</p>
-                    <p className="text-xl sm:text-2xl font-bold text-accent">{scheduledAppointments.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-primary/10 rounded-full shrink-0">
-                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground truncate">Concluídos</p>
-                    <p className="text-xl sm:text-2xl font-bold text-primary">{completedAppointments.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-destructive/10 rounded-full shrink-0">
-                    <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-destructive" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground truncate">Cancelados</p>
-                    <p className="text-xl sm:text-2xl font-bold text-destructive">{cancelledAppointments.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="staff-kpis metric-actions" aria-label="Filtrar agendamentos">
+            {([{value:'scheduled',label:'Pendentes',count:scheduledAppointments.length,icon:AlertCircle},{value:'completed',label:'Concluídos',count:completedAppointments.length,icon:CheckCircle},{value:'cancelled',label:'Cancelados',count:cancelledAppointments.length,icon:XCircle}] as const).map(metric=><button key={metric.value} className={`metric-action metric-${metric.value}`} aria-pressed={dashboardSection==='agenda'&&appointmentTab===metric.value} onClick={()=>{setAppointmentTab(metric.value);setDashboardSection('agenda');setDayFilter('all');setListLimit(10);}}><span className="metric-icon"><metric.icon className="h-4 w-4" aria-hidden="true"/></span><span><small>{metric.label}</small><strong>{metric.count}</strong></span></button>)}
           </div>
-
+          <div className="segmented-nav staff-section-nav" aria-label="Seção do painel"><Button variant="ghost" aria-pressed={dashboardSection==='agenda'} onClick={()=>setDashboardSection('agenda')}>Agenda</Button><Button variant="ghost" aria-pressed={dashboardSection==='performance'} onClick={()=>setDashboardSection('performance')}>Desempenho</Button><Button variant="ghost" aria-pressed={dashboardSection==='goals'} onClick={()=>setDashboardSection('goals')}><Trophy className="h-4 w-4 mr-1"/>Metas</Button></div>
+          {dashboardSection==='performance' && <section aria-label="Meu desempenho">
           {/* Charts Row - Compactos */}
           <div className="grid lg:grid-cols-2 gap-3 sm:gap-4 mb-6">
             {/* Weekly performance chart */}
@@ -954,151 +929,28 @@ export default function BarberDashboard() {
                 {getServiceDistribution().length === 0 ? (
                   <p className="text-center text-muted-foreground py-4 text-sm">Nenhum serviço concluído.</p>
                 ) : (
-                  <div className="flex items-center gap-3">
-                    <OperationalPieChart data={getServiceDistribution()} />
-                    <div className="flex-1 space-y-1 min-w-0">
-                      {getServiceDistribution().slice(0, 4).map((item, index) => (
-                        <div key={item.name} className="flex items-center justify-between gap-1">
-                          <div className="flex items-center gap-1 min-w-0">
-                            <div
-                              className="w-2 h-2 rounded-full shrink-0"
-                              style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
-                            />
-                            <span className="text-xs truncate">{item.name}</span>
-                          </div>
-                          <span className="text-xs font-medium shrink-0">{item.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <OperationalPieChart data={getServiceDistribution()} />
                 )}
               </CardContent>
             </Card>
           </div>
 
+          </section>}
+          {dashboardSection==='agenda' && <section aria-label="Minha agenda">
           {/* Appointments Tabs */}
-          <Tabs defaultValue="scheduled">
-            <TabsList className="mb-4 w-full grid grid-cols-4 h-auto">
-              <TabsTrigger value="scheduled" className="text-xs sm:text-sm py-2 px-1 sm:px-3">
-                <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                <span className="hidden xs:inline">Abertos</span> ({scheduledAppointments.length})
-              </TabsTrigger>
-              <TabsTrigger value="completed" className="text-xs sm:text-sm py-2 px-1 sm:px-3">
-                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                <span className="hidden xs:inline">Concluídos</span> ({completedAppointments.length})
-              </TabsTrigger>
-              <TabsTrigger value="cancelled" className="text-xs sm:text-sm py-2 px-1 sm:px-3">
-                <XCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                <span className="hidden xs:inline">Cancelados</span> ({cancelledAppointments.length})
-              </TabsTrigger>
-              <TabsTrigger value="loyalty" className="text-xs sm:text-sm py-2 px-1 sm:px-3">
-                <Trophy className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                <span className="hidden xs:inline">Metas</span>
-              </TabsTrigger>
-            </TabsList>
-
-
-
+          <Tabs className="staff-appointment-tabs" value={appointmentTab} onValueChange={value=>{setAppointmentTab(value);setListLimit(10);}}>
             <TabsContent value="scheduled">
               <Card>
-                <CardHeader>
-                  <CardTitle className="font-serif">Agendamentos Pendentes</CardTitle>
-                  <CardDescription>Serviços agendados para atendimento</CardDescription>
-                </CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-3"><div>
+                  <CardTitle className="font-serif">Agendamentos</CardTitle>
+                  <CardDescription>Toque em um horário para gerenciar.</CardDescription>
+                </div><div><Label htmlFor="staff-day" className="sr-only">Filtrar dia</Label><select id="staff-day" value={dayFilter} onChange={e=>{setDayFilter(e.target.value);setListLimit(10);}} className="staff-day-select"><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="all">Todos</option></select></div></CardHeader>
                 <CardContent>
-                  {scheduledAppointments.length === 0 ? (
+                  {visibleScheduled.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">Nenhum agendamento pendente.</p>
                   ) : (
                     <div className="space-y-2">
-                      {scheduledAppointments.map((apt) => {
-                        const extras = getExtraServicesForAppointment(apt.id);
-                        const totalPrice = getTotalPrice(apt);
-                        const totalDuration = getTotalDuration(apt);
-                        return (
-                          <div
-                            key={apt.id}
-                            className="p-3 rounded-lg bg-secondary/50 border border-border"
-                          >
-                            {/* Header compacto: Data/hora + Cliente + Valor */}
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <div className="text-center shrink-0 bg-primary/10 rounded px-2 py-1">
-                                  <p className="text-xs font-medium">{format(parseLocalDate(apt.appointment_date), "dd/MM")}</p>
-                                  <p className="text-sm font-bold">{apt.appointment_time.slice(0, 5)}</p>
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="font-medium text-sm truncate">{apt.client_name}</p>
-                                </div>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <p className="font-semibold text-sm">R$ {totalPrice.toFixed(2)}</p>
-                                <p className="text-xs text-muted-foreground flex items-center justify-end gap-1">
-                                  <Clock className="w-3 h-3" /> {totalDuration}min
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Detalhamento dos serviços com duração e preço */}
-                            <div className="space-y-0.5 mb-2 text-xs border-t border-border/50 pt-2">
-                              <div className="flex items-center justify-between">
-                                <span className="flex items-center gap-1">
-                                  <Scissors className="w-3 h-3 text-muted-foreground" />
-                                  {apt.service?.name}
-                                  <span className="text-muted-foreground">({apt.service?.duration_minutes}min)</span>
-                                </span>
-                                <span className="text-muted-foreground">R$ {apt.service?.price?.toFixed(2)}</span>
-                              </div>
-                              {extras.map((extra) => (
-                                <div key={extra.id} className="flex items-center justify-between text-primary">
-                                  <span className="flex items-center gap-1">
-                                    <Plus className="w-3 h-3" />
-                                    {extra.name}
-                                    <span className="text-primary/70">({extra.duration_minutes}min)</span>
-                                  </span>
-                                  <span>R$ {extra.price?.toFixed(2)}</span>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Botões compactos em grid - Barbeiro NÃO pode concluir (apenas admin) */}
-                            <div className="grid grid-cols-3 gap-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-primary hover:bg-primary/10 text-xs h-8 px-2"
-                                onClick={() => {
-                                  setDetailsAppointment(apt);
-                                  setShowDetailsDialog(true);
-                                }}
-                              >
-                                <Info className="w-3 h-3 mr-1" />
-                                <span className="hidden xs:inline">Detalhes</span>
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-primary hover:bg-primary/10 text-xs h-8 px-2"
-                                onClick={() => openAddServiceDialog(apt)}
-                              >
-                                <Plus className="w-3 h-3 mr-1" />
-                                <span className="hidden xs:inline">Serviço</span>
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-destructive hover:bg-destructive/10 text-xs h-8 px-2"
-                                onClick={() => cancelAppointment(apt)}
-                              >
-                                <XCircle className="w-3 h-3 mr-1" />
-                                <span className="hidden xs:inline">Cancelar</span>
-                              </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground text-center mt-1 italic">
-                              Apenas o admin pode marcar como concluído
-                            </p>
-                          </div>
-                        );
-                      })}
+                      {visibleScheduled.slice(0,listLimit).map(apt=><button key={apt.id} className="staff-appointment-row" aria-label={`Detalhes de ${apt.client_name}, ${apt.appointment_time.slice(0,5)}`} onClick={()=>{setDetailsAppointment(apt);setShowDetailsDialog(true);}}><time className="appointment-time">{format(parseLocalDate(apt.appointment_date),'dd/MM')}<strong className="block mt-1">{apt.appointment_time.slice(0,5)}</strong></time><span className="min-w-0 flex-1"><strong className="block truncate font-medium">{apt.client_name}</strong><small className="block truncate text-muted-foreground">{apt.service?.name}</small><small className="block text-muted-foreground mt-1">{getTotalDuration(apt)} min · {formatCurrency(getTotalPrice(apt))}</small></span><span className="text-right"><span className="status-pill status-scheduled">Pendente</span><small className="block text-primary mt-2">Detalhes ›</small></span></button>)}
                     </div>
                   )}
                 </CardContent>
@@ -1116,48 +968,7 @@ export default function BarberDashboard() {
                     <p className="text-center text-muted-foreground py-8">Nenhum serviço concluído neste mês.</p>
                   ) : (
                     <div className="space-y-3">
-                      {completedAppointments.map((apt) => {
-                        const extras = getExtraServicesForAppointment(apt.id);
-                        const totalPrice = getTotalPrice(apt);
-                        const totalServices = 1 + extras.length;
-                        const totalCommission = totalServices * (barberData?.commission || 0);
-                        return (
-                          <div
-                            key={apt.id}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/20 gap-3"
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="text-center min-w-[60px]">
-                                <p className="text-sm font-medium">{format(parseLocalDate(apt.appointment_date), "dd/MM")}</p>
-                                <p className="text-lg font-bold">{apt.appointment_time.slice(0, 5)}</p>
-                              </div>
-                              <div>
-                                <p className="font-medium">{apt.client_name}</p>
-                                <div className="space-y-0.5">
-                                  <p className="text-sm text-muted-foreground">
-                                    {apt.service?.name} <span className="text-xs">({apt.service?.duration_minutes}min)</span> - <span className="text-foreground">R$ {apt.service?.price?.toFixed(2)}</span>
-                                  </p>
-                                  {extras.map((extra) => (
-                                    <p key={extra.id} className="text-sm text-primary">
-                                      + {extra.name} <span className="text-xs">({extra.duration_minutes}min)</span> - R$ {extra.price?.toFixed(2)}
-                                    </p>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-semibold">Total: R$ {totalPrice.toFixed(2)}</p>
-                              <p className="text-xs text-muted-foreground flex items-center justify-end gap-1">
-                                <Clock className="w-3 h-3" /> {getTotalDuration(apt)} min
-                              </p>
-                              {extras.length > 0 && (
-                                <p className="text-xs text-muted-foreground">{totalServices} serviços</p>
-                              )}
-                              <p className="text-xs text-primary">+R$ {totalCommission.toFixed(2)} comissão</p>
-                            </div>
-                          </div>
-                        );
-                      })}
+                      {completedAppointments.slice(0,listLimit).map(apt=><button key={apt.id} className="staff-appointment-row" aria-label={`Detalhes de ${apt.client_name}`} onClick={()=>{setDetailsAppointment(apt);setShowDetailsDialog(true);}}><time className="appointment-time">{format(parseLocalDate(apt.appointment_date),'dd/MM')}<strong className="block mt-1">{apt.appointment_time.slice(0,5)}</strong></time><span className="min-w-0 flex-1"><strong className="block truncate font-medium">{apt.client_name}</strong><small className="block truncate text-muted-foreground">{apt.service?.name}</small><small className="block text-muted-foreground">{getTotalDuration(apt)} min · {formatCurrency(getTotalPrice(apt))}</small></span><span className="text-right"><span className="status-pill status-completed">Concluído</span><small className="block text-primary mt-2">Detalhes ›</small></span></button>)}
                     </div>
                   )}
                 </CardContent>
@@ -1175,64 +986,15 @@ export default function BarberDashboard() {
                     <p className="text-center text-muted-foreground py-8">Nenhum cancelamento neste mês.</p>
                   ) : (
                     <div className="space-y-3">
-                      {cancelledAppointments.map((apt) => {
-                        const extras = getExtraServicesForAppointment(apt.id);
-                        const totalPrice = getTotalPrice(apt);
-                        return (
-                          <div
-                            key={apt.id}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-destructive/5 border border-destructive/20 opacity-60 gap-3"
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="text-center min-w-[60px]">
-                                <p className="text-sm font-medium">{format(parseLocalDate(apt.appointment_date), "dd/MM")}</p>
-                                <p className="text-lg font-bold">{apt.appointment_time.slice(0, 5)}</p>
-                              </div>
-                              <div>
-                                <p className="font-medium">{apt.client_name}</p>
-                                <div className="space-y-0.5">
-                                  <p className="text-sm text-muted-foreground">
-                                    {apt.service?.name} <span className="text-xs">({apt.service?.duration_minutes}min)</span> - R$ {apt.service?.price?.toFixed(2)}
-                                  </p>
-                                  {extras.map((extra) => (
-                                    <p key={extra.id} className="text-sm text-destructive/70">
-                                      + {extra.name} <span className="text-xs">({extra.duration_minutes}min)</span> - R$ {extra.price?.toFixed(2)}
-                                    </p>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex flex-col items-end gap-1">
-                              <span className="text-sm text-muted-foreground">R$ {totalPrice.toFixed(2)}</span>
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Clock className="w-3 h-3" /> {getTotalDuration(apt)} min
-                              </span>
-                              <StatusBadge status={apt.status} />
-                            </div>
-                          </div>
-                        );
-                      })}
+                      {cancelledAppointments.slice(0,listLimit).map(apt=><button key={apt.id} className="staff-appointment-row" aria-label={`Detalhes de ${apt.client_name}`} onClick={()=>{setDetailsAppointment(apt);setShowDetailsDialog(true);}}><time className="appointment-time">{format(parseLocalDate(apt.appointment_date),'dd/MM')}<strong className="block mt-1">{apt.appointment_time.slice(0,5)}</strong></time><span className="min-w-0 flex-1"><strong className="block truncate font-medium">{apt.client_name}</strong><small className="block truncate text-muted-foreground">{apt.service?.name}</small><small className="block text-muted-foreground">{getTotalDuration(apt)} min · {formatCurrency(getTotalPrice(apt))}</small></span><span className="text-right"><span className="status-pill status-cancelled">Cancelado</span><small className="block text-primary mt-2">Detalhes ›</small></span></button>)}
                     </div>
                   )}
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="loyalty">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="font-serif flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-primary" />
-                    Metas de Fidelidade
-                  </CardTitle>
-                  <CardDescription>Acompanhe o progresso dos clientes (somente leitura)</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <LoyaltyTab isAdmin={false} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          </Tabs><ListMore total={appointmentTab==='scheduled'?visibleScheduled.length:appointmentTab==='completed'?completedAppointments.length:appointmentTab==='cancelled'?cancelledAppointments.length:0} shown={listLimit} onMore={()=>setListLimit(n=>n+10)}/></section>}
+          {dashboardSection==='goals'&&<section className="staff-goals" aria-label="Metas"><div className="goals-overview"><div><h2 className="text-lg font-semibold">Seu progresso no mês</h2><p className="text-sm text-muted-foreground mt-1">Atendimentos concluídos entre os agendamentos deste mês.</p><p className="text-sm mt-3"><strong className="text-primary">{completedAppointments.length}</strong> de {monthlyAppointments.length} atendimentos</p></div><div className="completion-gauge" role="img" aria-label={`${completedAppointments.length} de ${monthlyAppointments.length} atendimentos concluídos`}><Gauge value={monthlyAppointments.length?completedAppointments.length/monthlyAppointments.length*100:0} centerValue={monthlyAppointments.length?Math.round(completedAppointments.length/monthlyAppointments.length*100):0} suffix="%" defaultLabel="concluídos" minWidth={180} height={180} activeFill="#B9FF39" inactiveFill="#2A332D" inactiveFillOpacity={.7} totalNotches={40} spacing={25}/></div></div><div className="mt-5"><h2 className="font-semibold text-lg mb-3">Metas de fidelidade</h2><LoyaltyTab isAdmin={false}/></div></section>}
         </motion.div>
 
         {/* New Appointment Dialog */}
@@ -1270,7 +1032,7 @@ export default function BarberDashboard() {
                   <SelectContent>
                     {services.map((service) => (
                       <SelectItem key={service.id} value={service.id}>
-                        {service.name} - R$ {service.price.toFixed(2)}
+                        {service.name} - {formatCurrency(service.price)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1335,11 +1097,11 @@ export default function BarberDashboard() {
               <div className="p-3 bg-muted rounded-lg space-y-1">
                 <p className="text-sm text-muted-foreground font-medium">Serviços agendados:</p>
                 <p className="text-sm">
-                  {selectedAppointment?.service?.name} - <span className="font-medium">R$ {selectedAppointment?.service?.price?.toFixed(2)}</span>
+                  {selectedAppointment?.service?.name} - <span className="font-medium">{formatCurrency(selectedAppointment?.service?.price)}</span>
                 </p>
                 {selectedAppointment && getExtraServicesForAppointment(selectedAppointment.id).map((extra) => (
                   <p key={extra.id} className="text-sm text-primary">
-                    + {extra.name} - R$ {extra.price?.toFixed(2)}
+                    + {extra.name} - {formatCurrency(extra.price)}
                   </p>
                 ))}
                 <p className="text-xs text-muted-foreground pt-1 border-t mt-2">
@@ -1364,7 +1126,7 @@ export default function BarberDashboard() {
                       })
                       .map((service) => (
                         <SelectItem key={service.id} value={service.id}>
-                          {service.name} - R$ {service.price.toFixed(2)} ({service.duration_minutes}min)
+                          {service.name} - {formatCurrency(service.price)} ({service.duration_minutes}min)
                         </SelectItem>
                       ))}
                   </SelectContent>
@@ -1442,7 +1204,7 @@ export default function BarberDashboard() {
                           {detailsAppointment.service?.name}
                           <span className="text-xs text-muted-foreground">({detailsAppointment.service?.duration_minutes}min)</span>
                         </span>
-                        <span>R$ {detailsAppointment.service?.price?.toFixed(2)}</span>
+                        <span>{formatCurrency(detailsAppointment.service?.price)}</span>
                       </div>
                       {extras.map((extra) => (
                         <div key={extra.id} className="flex items-center justify-between text-sm text-primary">
@@ -1451,7 +1213,7 @@ export default function BarberDashboard() {
                             {extra.name}
                             <span className="text-xs text-primary/70">({extra.duration_minutes}min)</span>
                           </span>
-                          <span>R$ {extra.price?.toFixed(2)}</span>
+                          <span>{formatCurrency(extra.price)}</span>
                         </div>
                       ))}
                     </div>
@@ -1466,13 +1228,14 @@ export default function BarberDashboard() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Valor Total</span>
-                      <span className="font-bold text-lg text-primary">R$ {totalPrice.toFixed(2)}</span>
+                      <span className="font-bold text-lg text-primary">{formatCurrency(totalPrice)}</span>
                     </div>
                   </div>
                 </div>
               );
             })()}
-            <DialogFooter>
+            <DialogFooter>{detailsAppointment?.status==='scheduled'&&<><Button variant="outline" onClick={()=>{setShowDetailsDialog(false);openAddServiceDialog(detailsAppointment);}}><Plus className="h-4 w-4 mr-1"/>Adicionar serviço</Button><Button variant="outline" className="text-destructive" onClick={()=>{setShowDetailsDialog(false);cancelAppointment(detailsAppointment);}}>Cancelar agendamento</Button></>}
+
               <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
                 Fechar
               </Button>

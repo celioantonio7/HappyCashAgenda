@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { AreaChart } from '@/components/bklit/area-chart';
 import { Area } from '@/components/bklit/area';
 import { XAxis } from '@/components/bklit/x-axis';
@@ -17,7 +18,7 @@ type Point = {name:string; [key:string]:string|number};
 export function OperationalBarChart({data,measure='agendamentos',horizontal=false}:{data:Point[];measure?:string;horizontal?:boolean}) {
   const reduced=useReducedMotion();
   if(!data.some(d=>Number(d[measure])>0)) return <p className="py-12 text-center text-xs text-muted-foreground">Nenhum atendimento neste período.</p>;
-  return <div className="min-w-0" aria-label="Atendimentos por período"><BarChart data={data} xDataKey="name" orientation={horizontal?'horizontal':'vertical'} aspectRatio="2.4 / 1" margin={{top:12,right:12,bottom:32,left:horizontal?76:16}} animationDuration={reduced?0:500}><Grid horizontal={!horizontal} vertical={horizontal}/><Bar dataKey={measure} fill="#b9ff39" lineCap="round" animate={!reduced}/>{horizontal?<BarYAxis/>:<BarXAxis/>}<ChartTooltip showDatePill={false}/></BarChart><table className="sr-only"><caption>Atendimentos por período</caption><thead><tr><th>Período</th><th>Atendimentos</th></tr></thead><tbody>{data.map(d=><tr key={d.name}><td>{d.name}</td><td>{integer.format(Number(d[measure]))}</td></tr>)}</tbody></table></div>;
+  return <div className="min-w-0" aria-label="Atendimentos por período"><BarChart data={data} xDataKey="name" orientation={horizontal?'horizontal':'vertical'} aspectRatio="2.4 / 1" margin={{top:12,right:12,bottom:32,left:horizontal?76:16}} animationDuration={reduced?0:500}><Grid horizontal={!horizontal} vertical={horizontal}/><Bar dataKey={measure} fill="#b9ff39" lineCap="round" animate={!reduced}/>{horizontal?<BarYAxis/>:<BarXAxis maxLabels={{base:7,sm:10}}/>}<ChartTooltip showDatePill={false}/></BarChart><table className="sr-only"><caption>Atendimentos por período</caption><thead><tr><th>Período</th><th>Atendimentos</th></tr></thead><tbody>{data.map(d=><tr key={d.name}><td>{d.name}</td><td>{integer.format(Number(d[measure]))}</td></tr>)}</tbody></table></div>;
 }
 function PieLabel() {
   const {hoveredIndex,data,totalValue}=usePie();
@@ -25,8 +26,25 @@ function PieLabel() {
   return <g aria-hidden="true"><text textAnchor="middle" y="-2" fill="#f5f7f4" fontSize="18" fontWeight="600">{integer.format(item?.value??totalValue)}</text><text textAnchor="middle" y="16" fill="#a1aba3" fontSize="8">{item?.label?.slice(0,18)||'atendimentos'}</text></g>;
 }
 export function OperationalPieChart({data}:{data:{name:string;value:number}[]}) {
-  const reduced=useReducedMotion();const slices=data.map((d,i)=>({label:d.name,value:d.value,color:chartPalette[i%chartPalette.length]}));
-  return <div className="w-[140px] shrink-0" aria-label={data.map(d=>`${d.name}: ${integer.format(d.value)}`).join('; ')}><PieChart data={slices} size={140} innerRadius={40} padAngle={.04}>{slices.map((_,i)=><PieSlice key={i} index={i} showGlow={false} animate={!reduced}/>)}<PieLabel/></PieChart></div>;
+  const reduced=useReducedMotion();
+  const [selected,setSelected]=useState<number|null>(null);
+  const [hovered,setHovered]=useState<number|null>(null);
+  const active=hovered??selected;
+  const total=data.reduce((sum,item)=>sum+item.value,0);
+  const slices=data.map((d,i)=>({label:d.name,value:d.value,color:chartPalette[i%chartPalette.length]}));
+  return <div className="interactive-pie">
+    <div className="interactive-pie-plot" aria-label="Distribuição dos atendimentos">
+      <PieChart data={slices} size={140} innerRadius={40} padAngle={.04} hoveredIndex={active} onHoverChange={setHovered}>
+        {slices.map((_,i)=><PieSlice key={i} index={i} showGlow={false} animate={!reduced}/>)}<PieLabel/>
+      </PieChart>
+    </div>
+    <div className="interactive-pie-legend" aria-label="Destacar serviço no gráfico">
+      {data.map((item,index)=><button type="button" key={item.name} aria-pressed={selected===index} onClick={()=>setSelected(current=>current===index?null:index)} onMouseEnter={()=>setHovered(index)} onMouseLeave={()=>setHovered(null)} onFocus={()=>setHovered(index)} onBlur={()=>setHovered(null)} className={active===index?'is-active':''}>
+        <span className="pie-legend-dot" style={{backgroundColor:slices[index].color}}/>
+        <span className="pie-legend-name">{item.name}</span><strong>{integer.format(item.value)}</strong><span className="pie-legend-percent">{total?Math.round(item.value/total*100):0}%</span>
+      </button>)}
+    </div>
+  </div>;
 }
 
 export function OperationalAreaChart({data}:{data:{name:string;date:string;faturamento:number}[]}) {

@@ -1,8 +1,10 @@
+import { formatCurrency } from '@/lib/formatCurrency';
+import { ListMore } from '@/components/app/ListMore';
 import { saveAgendaBookingDraft } from '@/lib/agendaBookingDraft';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, User, Scissors, X, Loader2, Trophy, CalendarSync } from '@/components/animated-icons';
+import { Calendar, Clock, User, Scissors, X, Loader2, Trophy, CalendarSync, CheckCircle, XCircle, ChevronRight, Plus } from '@/components/animated-icons';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -61,7 +63,7 @@ interface Appointment {
   appointment_type?: 'appointment' | 'queue';
   barber_id: string;
   status: 'scheduled' | 'completed' | 'cancelled';
-  barber: { name: string; phone?: string | null };
+  barber: { name: string; phone?: string | null; photo_url?: string | null };
   service: { name: string; price: number; duration_minutes: number };
   extraServices: ExtraService[];
 }
@@ -94,6 +96,10 @@ type BookedSlotRow = {
 };
 
 export default function MyAppointments() {
+  const [clientSection,setClientSection]=useState<'upcoming'|'history'|'loyalty'>('upcoming');
+  const [viewAppointment,setViewAppointment]=useState<Appointment|null>(null);
+  const [upcomingLimit,setUpcomingLimit]=useState(3);
+  const [historyLimit,setHistoryLimit]=useState(10);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [historyFilter, setHistoryFilter] = useState<'all'|'completed'|'cancelled'>('all');
   const [loading, setLoading] = useState(true);
@@ -146,6 +152,7 @@ export default function MyAppointments() {
       // Subscribe to realtime changes for this client's appointments
       const appointmentsChannel = supabase
         .channel('client-appointments-changes')
+        .on('postgres_changes',{event:'INSERT',schema:'public',table:'appointments',filter:`client_id=eq.${user.id}`},()=>{void fetchAppointments();})
         .on(
           'postgres_changes',
           {
@@ -277,7 +284,7 @@ export default function MyAppointments() {
         barber_id,
         service_id,
         status,
-        barber:barbers(name, phone),
+        barber:barbers(name, phone, photo_url),
         service:services(name, price, duration_minutes)
       `)
       .eq('client_id', user.id)
@@ -312,7 +319,7 @@ export default function MyAppointments() {
       const formatted = data.map((apt) => ({
         ...apt,
         appointment_type: apt.appointment_type === "queue" ? "queue" as const : "appointment" as const,
-        barber: apt.barber as unknown as { name: string; phone?: string | null },
+        barber: apt.barber as unknown as { name: string; phone?: string | null; photo_url?: string | null },
         service: apt.service as unknown as { name: string; price: number; duration_minutes: number },
         extraServices: extraServicesMap[apt.id] || [],
       }));
@@ -658,231 +665,29 @@ export default function MyAppointments() {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-3xl mx-auto"
-        >
-          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="font-serif text-3xl font-bold">Meu <span className="text-primary">histórico.</span></h1>
-              <p className="text-muted-foreground mt-1">
-                Seus próximos horários e atendimentos anteriores.
-              </p>
+      <div className="history-page client-agenda container px-4 py-5">
+        <header className="client-agenda-heading"><h1>Meus <span className="text-primary">agendamentos</span></h1><p>Acompanhe seus próximos horários e histórico.</p><Button className="w-full" onClick={()=>navigate(publicBookingPath)}><Plus className="h-4 w-4 mr-2"/>Novo Agendamento</Button></header>
+        <div className="metric-actions client-agenda-metrics" aria-label="Filtrar meus agendamentos">
+          {([{value:'upcoming',label:'Próximos',count:upcomingAppointments.length,icon:Calendar},{value:'completed',label:'Concluídos',count:appointments.filter(a=>a.status==='completed').length,icon:CheckCircle},{value:'cancelled',label:'Cancelados',count:appointments.filter(a=>a.status==='cancelled').length,icon:XCircle}] as const).map(metric=><button key={metric.value} className={`metric-action metric-${metric.value}`} aria-pressed={metric.value==='upcoming'?clientSection==='upcoming':clientSection==='history'&&historyFilter===metric.value} onClick={()=>{if(metric.value==='upcoming')setClientSection('upcoming');else{setClientSection('history');setHistoryFilter(metric.value);setHistoryLimit(10);}}}><span className="metric-icon"><metric.icon aria-hidden="true" className="h-4 w-4"/></span><span><small>{metric.label}</small><strong>{metric.count}</strong></span></button>)}
+        </div>
+        <Button variant="outline" className="client-loyalty-button" aria-pressed={clientSection==='loyalty'} onClick={()=>setClientSection(current=>current==='loyalty'?'upcoming':'loyalty')}>{clientSection==='loyalty'?'Voltar aos agendamentos':'Fidelidade'}</Button>
+        <section className="client-agenda-panel" aria-label={clientSection==='upcoming'?'Próximos agendamentos':clientSection==='history'?'Histórico de agendamentos':'Fidelidade'}>
+          {clientSection==='loyalty'?<LoyaltyTab isAdmin={false} clientName={profileName||undefined}/>:<>
+            {clientSection==='history'&&<div className="history-filter-chips" aria-label="Filtrar histórico">{([{value:'all',label:'Todos'},{value:'completed',label:'Concluídos'},{value:'cancelled',label:'Cancelados'}] as const).map(filter=><Button size="sm" variant={historyFilter===filter.value?'secondary':'ghost'} key={filter.value} aria-pressed={historyFilter===filter.value} onClick={()=>{setHistoryFilter(filter.value);setHistoryLimit(10);}}>{filter.label}</Button>)}</div>}
+            <div className="client-appointment-list">
+              {(clientSection==='upcoming'?upcomingAppointments.slice(0,upcomingLimit):filteredHistory.slice(0,historyLimit)).map(apt=><button className="client-appointment-row" key={apt.id} aria-label={`Detalhes de ${apt.service?.name}, ${format(parseLocalDate(apt.appointment_date),'dd/MM')} às ${apt.appointment_time.slice(0,5)}`} onClick={()=>setViewAppointment(apt)}>
+                <time className="client-date-tile"><span>{format(parseLocalDate(apt.appointment_date),'dd/MM')}</span><strong>{apt.appointment_time.slice(0,5)}</strong><small>{format(parseLocalDate(apt.appointment_date),'EEE',{locale:ptBR})}</small></time>
+                <span className="client-appointment-content"><strong>{apt.service?.name}</strong><span className="client-barber-line">{apt.barber?.photo_url?<img src={apt.barber.photo_url} alt=""/>:<User className="h-3 w-3"/>}<span>{apt.barber?.name}</span></span><small className="client-appointment-meta"><Clock className="h-3 w-3"/>{getTotalDuration(apt)} min<span className="meta-divider"/>{formatCurrency(getTotalPrice(apt))}</small></span>
+                <span className="client-appointment-trailing"><span className={`status-pill status-${apt.status}`}>{apt.status==='scheduled'?'Agendado':apt.status==='completed'?'Concluído':'Cancelado'}</span><span className="row-arrow"><ChevronRight className="h-4 w-4" aria-hidden="true"/></span></span>
+              </button>)}
             </div>
-            <Button onClick={() => navigate(publicBookingPath)} className="w-full sm:w-auto">
-              Novo Agendamento
-            </Button>
-          </div>
-
-          {appointments.length === 0 ? (
-            <Card className="border-border">
-              <CardContent className="py-16 text-center">
-                <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="font-serif text-xl font-semibold mb-2">
-                  Nenhum agendamento
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  Você ainda não tem nenhum horário marcado.
-                </p>
-                <Button onClick={() => navigate(publicBookingPath)}>
-                  Agendar Agora
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-8">
-              {upcomingAppointments.length > 0 && (
-                <div>
-                  <h2 className="font-serif text-xl font-semibold mb-4">Próximos</h2>
-                  <div className="space-y-4">
-                    {upcomingAppointments.map((apt, index) => (
-                      <motion.div
-                        key={apt.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <Card className="border-border hover:border-primary/30 transition-colors">
-                          <CardContent className="p-4">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2">
-                                  <StatusBadge status={apt.status} />
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-4 text-sm">
-                                  <span className="flex items-center gap-1.5">
-                                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                                    {format(parseLocalDate(apt.appointment_date), "dd 'de' MMMM", { locale: ptBR })}
-                                  </span>
-                                  <span className="flex items-center gap-1.5">
-                                    <Clock className="w-4 h-4 text-muted-foreground" />
-                                    {apt.appointment_time.slice(0, 5)}
-                                  </span>
-                                </div>
-
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-4 text-sm">
-                                    <span className="flex items-center gap-1.5">
-                                      <User className="w-4 h-4 text-muted-foreground" />
-                                      {apt.barber?.name}
-                                    </span>
-                                  </div>
-
-                                  {/* Lista todos os serviços com preços e durações individuais */}
-                                  <div className="space-y-1 mt-2">
-                                    <div className="flex items-center justify-between text-sm">
-                                      <span className="flex items-center gap-1.5">
-                                        <Scissors className="w-4 h-4 text-muted-foreground" />
-                                        {apt.service?.name}
-                                        <span className="text-xs text-muted-foreground">({apt.service?.duration_minutes}min)</span>
-                                      </span>
-                                      <span className="text-muted-foreground">R$ {apt.service?.price?.toFixed(2)}</span>
-                                    </div>
-                                    {apt.extraServices.map((extra) => (
-                                      <div key={extra.id} className="flex items-center justify-between text-sm text-primary">
-                                        <span className="flex items-center gap-1.5">
-                                          <span className="w-4 h-4 text-center">+</span>
-                                          {extra.name}
-                                          <span className="text-xs text-primary/70">({extra.duration_minutes}min)</span>
-                                        </span>
-                                        <span>R$ {extra.price?.toFixed(2)}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="flex flex-col items-end gap-2">
-                                <div className="mt-2 border-t border-border pt-2 text-left sm:mt-0 sm:border-0 sm:pt-0 sm:text-right">
-                                  <p className="text-xs text-muted-foreground">Total</p>
-                                  <span className="font-bold text-lg">
-                                    R$ {getTotalPrice(apt).toFixed(2)}
-                                  </span>
-                                  <p className="flex items-center gap-1 text-xs text-muted-foreground sm:justify-end">
-                                    <Clock className="w-3 h-3" /> {getTotalDuration(apt)} min
-                                  </p>
-                                  {apt.extraServices.length > 0 && (
-                                    <p className="text-xs text-primary">{apt.extraServices.length + 1} serviços</p>
-                                  )}
-                                </div>
-                                <div className="flex w-full flex-col gap-2 sm:w-auto">
-                                  {canRescheduleAppointment(apt) && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => openRescheduleDialog(apt)}
-                                      className="w-full"
-                                    >
-                                      <CalendarSync className="mr-1 h-4 w-4" />
-                                      Remarcar
-                                    </Button>
-                                  )}
-                                  {canCancelAppointment(apt) && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => openCancelDialog(apt)}
-                                      className="w-full text-destructive hover:text-destructive"
-                                    >
-                                      <X className="w-4 h-4 mr-1" />
-                                      Cancelar
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {pastAppointments.length > 0 && (
-                <div>
-                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4"><h2 className="font-serif text-xl font-semibold">Histórico</h2><div className="flex gap-1" aria-label="Filtrar histórico">{([{value:'all',label:'Todos'},{value:'completed',label:'Concluídos'},{value:'cancelled',label:'Cancelados'}] as const).map(filter=><Button key={filter.value} size="sm" variant={historyFilter===filter.value?'default':'ghost'} aria-pressed={historyFilter===filter.value} onClick={()=>setHistoryFilter(filter.value)}>{filter.label}</Button>)}</div></div>{filteredHistory.length===0 && <p className="text-sm text-muted-foreground py-5">Nenhum atendimento neste filtro.</p>}
-                  <div className="space-y-4">
-                    {filteredHistory.map((apt, index) => (
-                      <motion.div
-                        key={apt.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
-                        <Card className="border-border opacity-70">
-                          <CardContent className="p-4">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                              <div className="space-y-2">
-                                <StatusBadge status={apt.status} />
-
-                                <div className="flex items-center gap-4 text-sm flex-wrap">
-                                  <span className="flex items-center gap-1.5">
-                                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                                    {format(parseLocalDate(apt.appointment_date), "dd/MM/yyyy")}
-                                  </span>
-                                  <span className="flex items-center gap-1.5">
-                                    <Clock className="w-4 h-4 text-muted-foreground" />
-                                    {apt.appointment_time.slice(0, 5)}
-                                  </span>
-                                </div>
-                                <div className="space-y-0.5 mt-1">
-                                  <div className="flex items-center justify-between text-sm">
-                                    <span>{apt.service?.name} <span className="text-xs text-muted-foreground">({apt.service?.duration_minutes}min)</span></span>
-                                    <span className="text-muted-foreground">R$ {apt.service?.price?.toFixed(2)}</span>
-                                  </div>
-                                  {apt.extraServices.map((extra) => (
-                                    <div key={extra.id} className="flex items-center justify-between text-sm text-muted-foreground">
-                                      <span>+ {extra.name} <span className="text-xs">({extra.duration_minutes}min)</span></span>
-                                      <span>R$ {extra.price?.toFixed(2)}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="mt-2 border-t border-border pt-2 text-left sm:mt-0 sm:border-0 sm:pt-0 sm:text-right">
-                                <p className="text-xs text-muted-foreground">Total</p>
-                                <span className="font-medium text-muted-foreground">
-                                  R$ {getTotalPrice(apt).toFixed(2)}
-                                </span>
-                                <p className="flex items-center gap-1 text-xs text-muted-foreground sm:justify-end">
-                                  <Clock className="w-3 h-3" /> {getTotalDuration(apt)} min
-                                </p>
-                                {apt.extraServices.length > 0 && (
-                                  <p className="text-xs text-muted-foreground">{apt.extraServices.length + 1} serviços</p>
-                                )}
-                              </div>
-                            </div>
-                          <Button variant="outline" size="sm" className="mt-4" onClick={() => bookAgain(apt)}>Agendar novamente</Button>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </motion.div>
-
-        {/* Loyalty Progress Section */}
-        {profileName && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="max-w-3xl mx-auto mt-8"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <Trophy className="w-5 h-5 text-primary" />
-              <h2 className="font-serif text-xl font-semibold">Minhas Metas de Fidelidade</h2>
-            </div>
-            <LoyaltyTab isAdmin={false} clientName={profileName} />
-          </motion.div>
-        )}
+            {(clientSection==='upcoming'?upcomingAppointments.length:filteredHistory.length)===0&&<div className="empty-panel"><Calendar aria-hidden="true"/><h2 className="text-base font-semibold">{clientSection==='upcoming'?'Nenhum horário por aqui':'Nenhum atendimento neste filtro'}</h2><p>{clientSection==='upcoming'?'Seu próximo agendamento aparecerá aqui.':'Mude o filtro para consultar outros atendimentos.'}</p>{clientSection==='upcoming'&&<Button className="mt-4" onClick={()=>navigate(publicBookingPath)}>Agendar horário</Button>}</div>}
+            {clientSection==='upcoming'&&upcomingAppointments.length>upcomingLimit&&<Button variant="outline" className="history-show-all" onClick={()=>setUpcomingLimit(upcomingAppointments.length)}>Ver todos os agendamentos <ChevronRight className="h-4 w-4 ml-2"/></Button>}
+            {clientSection==='history'&&<ListMore total={filteredHistory.length} shown={historyLimit} onMore={()=>setHistoryLimit(n=>n+10)}/>}
+          </>}
+        </section>
       </div>
+      <Dialog open={!!viewAppointment} onOpenChange={open=>{if(!open)setViewAppointment(null);}}><DialogContent><DialogHeader><DialogTitle>Detalhes do agendamento</DialogTitle><DialogDescription>Confira seu atendimento e gerencie o horário.</DialogDescription></DialogHeader>{viewAppointment&&<div className="space-y-4"><StatusBadge status={viewAppointment.status}/><p className="font-medium">{format(parseLocalDate(viewAppointment.appointment_date),"dd 'de' MMMM",{locale:ptBR})} · {viewAppointment.appointment_time.slice(0,5)}</p><p className="text-sm text-muted-foreground">{viewAppointment.barber?.name}</p><div className="space-y-2 text-sm"><p>{viewAppointment.service?.name} · {formatCurrency(viewAppointment.service?.price)}</p>{viewAppointment.extraServices.map(extra=><p key={extra.id}>+ {extra.name} · {extra.duration_minutes} min · {formatCurrency(extra.price)}</p>)}<p className="font-semibold border-t border-border pt-3">{getTotalDuration(viewAppointment)} min · {formatCurrency(getTotalPrice(viewAppointment))}</p></div><div className="form-actions flex-wrap">{canRescheduleAppointment(viewAppointment)&&<Button variant="outline" onClick={()=>{setViewAppointment(null);openRescheduleDialog(viewAppointment);}}><CalendarSync className="h-4 w-4 mr-1"/>Remarcar</Button>}{canCancelAppointment(viewAppointment)&&<Button variant="outline" className="text-destructive" onClick={()=>{setViewAppointment(null);openCancelDialog(viewAppointment);}}><X className="h-4 w-4 mr-1"/>Cancelar</Button>}{!upcomingAppointments.some(a=>a.id===viewAppointment.id)&&<Button onClick={()=>bookAgain(viewAppointment)}>Agendar novamente</Button>}</div></div>}</DialogContent></Dialog>
 
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>

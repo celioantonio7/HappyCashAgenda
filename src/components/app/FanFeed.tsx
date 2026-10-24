@@ -1,18 +1,28 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, ArrowRight } from '@/components/animated-icons';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 export type FeedItem = { id: string; title: string; image: string; category: string; body: string };
 /** Web adaptation of dohooo/react-native-reanimated-carousel's Card Fan (MIT). */
 export function FanFeed({ items }: { items: FeedItem[] }) {
   const [current, setCurrent] = useState(0);
+  const [drag, setDrag] = useState(0);
+  const [opened, setOpened] = useState<FeedItem|null>(null);
+  const swiped = useRef(false);
   const reduced = useReducedMotion();
-  const move = (direction: number) => setCurrent(index => (index + direction + items.length) % items.length);
+  const move = (direction: number) => { setDrag(0); setCurrent(index => (index + direction + items.length) % items.length); };
   if (!items.length) return null;
-  return <section aria-roledescription="carrossel" aria-label="Publicações da barbearia" tabIndex={0} onKeyDown={e => { if(e.key === 'ArrowRight') {e.preventDefault(); move(1);} if(e.key === 'ArrowLeft') {e.preventDefault(); move(-1);} }}>
-    <motion.div className="fan-stage" onPanEnd={(_,info) => { if (Math.abs(info.offset.x)>35) move(info.offset.x<0 ? 1 : -1); }}>
-      {items.map((item,index) => { const distance = index-current; return <motion.article className="fan-card" key={item.id} aria-hidden={index!==current} animate={{ x: `calc(-50% + ${distance*58}px)`, rotate: distance*9, y: index===current ? 0 : 24, opacity: Math.abs(distance)>2 ? 0 : 1, zIndex: 20-Math.abs(distance) }} transition={{duration: reduced ? 0 : .35}}><img src={item.image} alt="" draggable={false}/><div className="fan-caption"><p className="text-[10px] text-primary uppercase tracking-widest">{item.category}</p><h2 className="text-xl font-semibold mt-2">{item.title}</h2></div></motion.article>; })}
+  const active=items[current];
+  return <section className="fan-feed" aria-roledescription="carrossel" aria-label="Publicações da barbearia" onKeyDown={e => { if(e.key === 'ArrowRight') {e.preventDefault(); move(1);} if(e.key === 'ArrowLeft') {e.preventDefault(); move(-1);} }}>
+    <motion.div className="fan-stage" onPanStart={()=>{swiped.current=false;}} onPan={(_,info)=>{if(Math.abs(info.offset.x)>8)swiped.current=true;setDrag(Math.max(-1,Math.min(1,info.offset.x/120)));}} onPanEnd={(_,info) => { if (Math.abs(info.offset.x)>35||Math.abs(info.velocity.x)>400) move(info.offset.x<0 ? 1 : -1);else setDrag(0);window.setTimeout(()=>{swiped.current=false;},0); }}>
+      {items.map((item,index) => {
+        const distance=((index-current+items.length+Math.floor(items.length/2))%items.length)-Math.floor(items.length/2);
+        const position=distance+drag;
+        return <motion.button type="button" className="fan-card" key={item.id} tabIndex={index===current?0:-1} aria-label={`${item.title}. ${index===current?'Abrir publicação':'Selecionar publicação'}`} onClick={()=>{if(swiped.current)return;if(index===current)setOpened(item);else setCurrent(index);}} initial={false} animate={{ x:`calc(-50% + ${position*56}px)`, rotate:position*9, y:Math.min(Math.abs(position)*24,60), opacity:Math.abs(position)>2.7?0:1, zIndex:20-Math.round(Math.abs(position)*5) }} transition={{type:'tween',duration:reduced?0:drag?0:.35}}><img src={item.image} alt="" draggable={false}/><div className="fan-caption"><p>{item.category}</p><h2>{item.title}</h2><span>Ver publicação <ArrowRight className="h-4 w-4" aria-hidden="true"/></span></div></motion.button>;
+      })}
     </motion.div>
-    <div className="flex justify-between items-center"><button className="icon-button" aria-label="Publicação anterior" onClick={() => move(-1)}><ArrowLeft /></button><span className="text-xs text-muted-foreground" aria-live="polite">{current+1} de {items.length}</span><button className="icon-button" aria-label="Próxima publicação" onClick={() => move(1)}><ArrowRight /></button></div>
-    <p className="text-sm text-muted-foreground mt-6 leading-relaxed">{items[current].body}</p>
+    <div className="fan-controls"><button className="icon-button" aria-label="Publicação anterior" onClick={() => move(-1)}><ArrowLeft /></button><div className="fan-dots">{items.map((item,index)=><button key={item.id} aria-label={`Ver publicação ${index+1}: ${item.title}`} aria-current={index===current?'true':undefined} onClick={()=>{setDrag(0);setCurrent(index);}}><span/></button>)}</div><button className="icon-button" aria-label="Próxima publicação" onClick={() => move(1)}><ArrowRight /></button></div>
+    <div className="fan-post-summary" aria-live="polite"><p className="fan-post-counter">{current+1} de {items.length} · {active.category}</p><h2>{active.title}</h2><p>{active.body}</p></div>
+    <Dialog open={!!opened} onOpenChange={open=>{if(!open)setOpened(null);}}><DialogContent className="feed-post-detail"><DialogTitle>{opened?.title}</DialogTitle><DialogDescription>Prévia fictícia · {opened?.category}</DialogDescription>{opened&&<><img src={opened.image} alt={`Imagem ilustrativa: ${opened.title}`}/><p>{opened.body}</p></>}</DialogContent></Dialog>
   </section>;
 }

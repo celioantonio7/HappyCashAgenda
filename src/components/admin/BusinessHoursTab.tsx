@@ -102,7 +102,7 @@ export function BusinessHoursTab({ isAdmin, onUpdate }: BusinessHoursTabProps) {
         )}
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="hours-grid grid gap-3 lg:grid-cols-2">
           {hours.map(hour => (
             <div key={hour.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg bg-secondary/30">
               <div className="flex items-center justify-between sm:w-32">

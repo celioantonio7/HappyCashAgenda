@@ -1,0 +1,13 @@
+{
+  "barbeiro-gabriel.jpg": "https://randomuser.me/api/portraits/men/75.jpg",
+  "barbeiro-matheus.jpg": "https://randomuser.me/api/portraits/men/52.jpg",
+  "cliente-bruno.jpg": "https://randomuser.me/api/portraits/men/60.jpg",
+  "cliente-andre.jpg": "https://randomuser.me/api/portraits/men/68.jpg",
+  "cliente-diego.jpg": "https://randomuser.me/api/portraits/men/77.jpg",
+  "cliente-felipe.jpg": "https://randomuser.me/api/portraits/men/83.jpg",
+  "servico-corte.webp": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=480&h=480&fit=crop&fm=webp",
+  "servico-barba.webp": "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=480&h=480&fit=crop&fm=webp",
+  "produto-cuidados.webp": "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=640&h=480&fit=crop&fm=webp",
+  "produto-hidratante.webp": "https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?w=640&h=480&fit=crop&fm=webp",
+  "produto-kit.webp": "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=640&h=480&fit=crop&fm=webp"
+}

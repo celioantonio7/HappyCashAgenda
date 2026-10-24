@@ -3,13 +3,33 @@
   "storeId": "ee675830-9f67-4e49-9585-ab4dd764016a",
   "users": [
     {
-      "email": "cliente.teste@happycash.example",
       "id": "cfa7ec2b-c3d1-4d06-9c63-16d7086c253d",
+      "email": "cliente.teste@happycash.example",
       "role": "client"
     },
     {
-      "email": "barbeiro.teste@happycash.example",
+      "id": "d38ab227-d298-4ca4-a01f-8132af00d419",
+      "email": "bruno.teste@happycash.example",
+      "role": "client"
+    },
+    {
+      "id": "d8d732c1-c831-412a-bb76-8db43106209a",
+      "email": "andre.teste@happycash.example",
+      "role": "client"
+    },
+    {
       "id": "bdb449c4-c6b5-44de-950b-536882b4d252",
+      "email": "barbeiro.teste@happycash.example",
+      "role": "barber"
+    },
+    {
+      "id": "53cb8131-6ee2-4163-b90a-7bce39d3ac02",
+      "email": "gabriel.teste@happycash.example",
+      "role": "barber"
+    },
+    {
+      "id": "51b7499c-1827-4170-9bdd-8841461225ce",
+      "email": "matheus.teste@happycash.example",
       "role": "barber"
     }
   ],
@@ -18,7 +38,8 @@
     "a6e00000-2026-4000-a000-000000000010",
     "a6e00000-2026-4000-a000-000000000011",
     "a6e00000-2026-4000-a000-000000000012",
-    "a6e00000-2026-4000-a000-000000000013"
+    "a6e00000-2026-4000-a000-000000000013",
+    "a6e00000-2026-4000-a000-000000000014"
   ],
   "clients": [
     "a6e00000-2026-4000-a000-000000000020",
@@ -41,10 +62,38 @@
     "a6e00000-2026-4000-a000-000000000110",
     "a6e00000-2026-4000-a000-000000000111",
     "a6e00000-2026-4000-a000-000000000112",
-    "a6e00000-2026-4000-a000-000000000113"
+    "a6e00000-2026-4000-a000-000000000113",
+    "a6e00000-2026-4000-a000-000000000200",
+    "a6e00000-2026-4000-a000-000000000201",
+    "a6e00000-2026-4000-a000-000000000202",
+    "a6e00000-2026-4000-a000-000000000203",
+    "a6e00000-2026-4000-a000-000000000210",
+    "a6e00000-2026-4000-a000-000000000211",
+    "a6e00000-2026-4000-a000-000000000212",
+    "a6e00000-2026-4000-a000-000000000213",
+    "a6e00000-2026-4000-a000-000000000220",
+    "a6e00000-2026-4000-a000-000000000221",
+    "a6e00000-2026-4000-a000-000000000222",
+    "a6e00000-2026-4000-a000-000000000223",
+    "ad4f839c-c50b-4a2e-b4e1-3472d4ae624f"
   ],
   "photos": [
     "https://iurkuipmknkrupntnkdl.supabase.co/storage/v1/object/public/barber-photos/design-tests/ee675830-9f67-4e49-9585-ab4dd764016a/cliente-rafael.jpg",
     "https://iurkuipmknkrupntnkdl.supabase.co/storage/v1/object/public/barber-photos/design-tests/ee675830-9f67-4e49-9585-ab4dd764016a/barbeiro-lucas.jpg"
+  ],
+  "updatedAt": "2026-10-23T23:21:33.002Z",
+  "barbers": [
+    "a6e00000-2026-4000-a000-000000000001",
+    "a6e00000-2026-4000-a000-000000000002",
+    "a6e00000-2026-4000-a000-000000000003"
+  ],
+  "products": [
+    "a6e00000-2026-4000-a000-000000000040",
+    "a6e00000-2026-4000-a000-000000000041",
+    "a6e00000-2026-4000-a000-000000000042",
+    "a6e00000-2026-4000-a000-000000000043"
+  ],
+  "uiTestAppointments": [
+    "ad4f839c-c50b-4a2e-b4e1-3472d4ae624f"
   ]
 }

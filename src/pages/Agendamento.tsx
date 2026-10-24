@@ -1,10 +1,13 @@
+import { formatCurrency } from '@/lib/formatCurrency';
+import { useVisibleRefresh } from '@/hooks/useVisibleRefresh';
+import { CollectionPhoto } from '@/components/app/CollectionPhoto';
 import { EmptyState } from '@/components/app/EmptyState';
 import { isAgendaDemo, demoServices, demoBarbers } from "@/lib/agendaDemo";
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Briefcase, Calendar, Clock, User, ArrowRight, ArrowLeft, Check, Loader2, AlertCircle, Users } from '@/components/animated-icons';
-import { format } from 'date-fns';
+import { addDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -48,6 +51,7 @@ interface Barber {
 }
 
 interface Service {
+  updated_at?: string;
   id: string;
   name: string;
   description: string | null;
@@ -75,6 +79,8 @@ interface WaitingQueueItem {
 const SLOT_BUFFER_MINUTES = 45; // Buffer entre agendamentos
 
 export default function Booking() {
+  const [showCalendar,setShowCalendar]=useState(false);
+  const [paymentChoice,setPaymentChoice]=useState<'local'|'pix'>('local');
   const [step, setStep] = useState<Step>('service');
   const [services, setServices] = useState<Service[]>([]);
   const [barbers, setBarbers] = useState<Barber[]>([]);
@@ -90,6 +96,8 @@ export default function Booking() {
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [slotError,setSlotError]=useState(false);
+  const slotRequestRef=useRef(0);
   const [submitting, setSubmitting] = useState(false);
   const [pixDialogOpen, setPixDialogOpen] = useState(false);
   const [waitingQueue, setWaitingQueue] = useState<WaitingQueueItem[]>([]);
@@ -97,6 +105,7 @@ export default function Booking() {
 
   const { user, loading: authLoading } = useAuth();
   const { settings, loading: brandingLoading } = useAgendaBranding();
+  useVisibleRefresh(()=>{void fetchServices();void fetchBarbers();},!!settings.storeAccountId);
   const { getAvailableTimeSlots, getAllBusinessSlots, getHoursForDay, canBookServiceAtTime } = useBusinessHours(settings.storeAccountId);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -238,13 +247,17 @@ export default function Booking() {
           filter: `barber_id=eq.${selectedBarber.id}`,
         },
         () => {
-          // Recarrega slots quando qualquer agendamento do barbeiro muda
-          fetchAvailableSlots();
+          // Revalida sem apagar os horários durante a consulta.
+          void fetchAvailableSlots(true);
         }
       )
       .subscribe();
 
+    const refresh = () => { if(document.visibilityState==='visible')void fetchAvailableSlots(true); };
+    const timer=window.setInterval(refresh,10000);
+    window.addEventListener('focus',refresh);
     return () => {
+      window.clearInterval(timer);window.removeEventListener('focus',refresh);
       supabase.removeChannel(channel);
     };
   }, [selectedBarber, selectedDate, selectedServices]);
@@ -266,7 +279,7 @@ export default function Booking() {
     if (!settings.storeAccountId) return;
     const { data } = await supabase
       .from('barbers')
-      .select('*')
+      .select('id,name,phone,photo_url,bio')
       .eq('store_account_id', settings.storeAccountId)
       .eq('is_active', true)
       .order('name');
@@ -300,10 +313,12 @@ export default function Booking() {
     }
   };
 
-  const fetchAvailableSlots = async () => {
+  const fetchAvailableSlots = async (silent = false) => {
     if (!selectedDate || !selectedBarber || selectedServices.length === 0) return;
 
-    setLoading(true);
+    const request=++slotRequestRef.current;
+    if(!silent)setLoading(true);
+    setSlotError(false);
 
     const year = selectedDate.getFullYear();
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
@@ -322,6 +337,8 @@ export default function Booking() {
       p_appointment_date: dateString,
     });
 
+    if(request!==slotRequestRef.current)return;
+    if(bookedError){setLoading(false);if(!silent){setSlotError(true);setAllSlots([]);setAvailableSlots([]);setSelectedTime('');}return;}
     const appointmentsWithDuration: { time: string; duration: number }[] = [];
     if (!bookedError && booked) {
       for (const row of booked as BookedSlotRow[]) {
@@ -382,6 +399,7 @@ export default function Booking() {
     setAllSlots([...filteredValidSlots, ...Array.from(exceededSet)].sort());
     setBookedSlots(occupiedSlots);
     setAvailableSlots(freeSlots);
+    setSelectedTime(current=>current&&!freeSlots.includes(current)?'':current);
     setExceededSlots(Array.from(exceededSet));
     setLoading(false);
   };
@@ -490,7 +508,7 @@ export default function Booking() {
     if (error) {
       toast({
         title: 'Erro ao agendar',
-        description: 'Não foi possível realizar o agendamento. Tente novamente.',
+        description: /horario|ocupad|conflito|overlap/i.test(error.message) ? 'Esse horário acabou de ser ocupado. Escolha outro horário.' : 'Não foi possível realizar o agendamento. Tente novamente.',
         variant: 'destructive',
       });
       return;
@@ -568,7 +586,7 @@ export default function Booking() {
       case 'service': return selectedServices.length > 0;
       case 'barber': return !!selectedBarber;
       case 'datetime': return isQueueFlow || (!!selectedDate && !!selectedTime);
-      case 'confirm': return !!clientName;
+      case 'confirm': return !!clientName && (isQueueFlow || (!!selectedTime && availableSlots.includes(selectedTime)));
       default: return false;
     }
   };
@@ -658,7 +676,7 @@ export default function Booking() {
           )}
 
           {/* Progress Steps */}
-          <div className="flex justify-between mb-12 relative">
+          <div className="booking-progress flex justify-between relative">
             <div className="absolute top-5 left-0 right-0 h-0.5 bg-border -z-10" />
             {steps.map((s, index) => {
               const Icon = s.icon;
@@ -690,7 +708,7 @@ export default function Booking() {
           </div>
 
           {/* Step Content */}
-          <Card className="border-border">
+          <Card className="booking-step-card border-border">
             <CardContent className="p-6">
               {step === 'service' && (
                 <motion.div
@@ -736,69 +754,19 @@ export default function Booking() {
                     </p>
                   ) : (
                     <>
-                      <div className="grid gap-3">
-                        {services.map((service) => {
-                          const isSelected = selectedServices.some(s => s.id === service.id);
-                          return (
-                            <button
-                              key={service.id}
-                              onClick={() => {
-                                if (isSelected) {
-                                  setSelectedServices(selectedServices.filter(s => s.id !== service.id));
-                                } else {
-                                  setSelectedServices([...selectedServices, service]);
-                                }
-                              }}
-                              className={cn(
-                                'w-full p-4 rounded-xl border text-left transition-all',
-                                isSelected
-                                  ? 'border-primary bg-primary/5'
-                                  : 'border-border hover:border-primary/50'
-                              )}
-                            >
-                              <div className="flex justify-between items-start">
-                                <div className="flex items-start gap-3">
-                                  <div className={cn(
-                                    'w-5 h-5 mt-0.5 rounded-md border-2 flex items-center justify-center transition-all',
-                                    isSelected ? 'bg-primary border-primary' : 'border-muted-foreground'
-                                  )}>
-                                    {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
-                                  </div>
-                                  <div>
-                                    <h3 className="font-semibold">{service.name}</h3>
-                                    {service.description && (
-                                      <p className="text-sm text-muted-foreground mt-1">
-                                        {service.description}
-                                      </p>
-                                    )}
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                      <Clock className="w-3 h-3 inline mr-1" />
-                                      {service.duration_minutes} min
-                                    </p>
-                                  </div>
-                                </div>
-                                <span className="font-semibold text-lg">
-                                  R$ {service.price.toFixed(2)}
-                                </span>
-                              </div>
-                            </button>
-                          );
+                      <div className="service-options grid gap-2">
+                        {services.map(service=>{
+                          const selected=selectedServices.some(item=>item.id===service.id);
+                          return <button key={service.id} type="button" aria-pressed={selected} onClick={()=>setSelectedServices(current=>selected?current.filter(item=>item.id!==service.id):[...current,service])} className={cn('service-option w-full border text-left transition-colors',selected?'border-primary bg-primary/5':'border-border hover:border-primary/50')}>
+                            <span className={cn('service-check',selected&&'selected')} aria-hidden="true">{selected&&<Check className="h-3 w-3"/>}</span>
+                            <CollectionPhoto store={settings.storeAccountId||''} kind="services" id={service.id} name={service.name} version={service.updated_at}/>
+                            <span className="service-text"><strong>{service.name}</strong>{service.description&&<small className="service-description">{service.description}</small>}<small><Clock className="h-3 w-3" aria-hidden="true"/> {service.duration_minutes} min</small></span>
+                            <span className="service-price">{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(service.price)}</span>
+                          </button>;
                         })}
                       </div>
 
-                      {selectedServices.length > 0 && (
-                        <div className="mt-4 p-4 bg-primary/10 rounded-xl">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <p className="font-medium">{selectedServices.length} item(ns) selecionado(s)</p>
-                              <p className="text-sm text-muted-foreground">Duração total: {totalDuration} min</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-xl font-bold text-primary">R$ {totalPrice.toFixed(2)}</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+
                     </>
                   )}
                 </motion.div>
@@ -826,13 +794,13 @@ export default function Booking() {
                           key={barber.id}
                           onClick={() => setSelectedBarber(barber)}
                           className={cn(
-                            'w-full p-4 rounded-xl border text-left transition-all flex items-center gap-4',
+                            'barber-option w-full p-3 rounded-xl border text-left transition-colors flex items-center gap-3',
                             selectedBarber?.id === barber.id
                               ? 'border-primary bg-primary/5'
                               : 'border-border hover:border-primary/50'
                           )}
                         >
-                          <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
+                          <div className="w-11 h-11 shrink-0 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
                             {barber.photo_url ? (
                               <img src={barber.photo_url} alt={barber.name} className="w-full h-full object-cover" />
                             ) : (
@@ -865,20 +833,25 @@ export default function Booking() {
                     <CardDescription>Selecione um dia aberto e o horário disponível</CardDescription>
                   </CardHeader>
 
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="date-time-grid grid md:grid-cols-2 gap-5">
                     <div>
                       <Label className="mb-2 block">Data</Label>
+                      <div className="date-rail" aria-label="Datas disponíveis">{Array.from({length:30},(_,i)=>addDays(new Date(),i)).filter(date=>!isDateDisabled(date)).slice(0,5).map(date=><button key={format(date,'yyyy-MM-dd')} type="button" aria-pressed={!!selectedDate&&format(date,'yyyy-MM-dd')===format(selectedDate,'yyyy-MM-dd')} aria-label={format(date,"EEEE, dd 'de' MMMM",{locale:ptBR})} onClick={()=>{setSelectedDate(date);setSelectedTime('');}}><span>{format(date,'EEE',{locale:ptBR})}</span><strong>{format(date,'dd')}</strong></button>)}</div>
+                      <button type="button" className="booking-calendar-toggle" aria-expanded={showCalendar} onClick={()=>setShowCalendar(v=>!v)}>{selectedDate?format(selectedDate,"dd 'de' MMMM",{locale:ptBR}):'Escolher outra data'} · {showCalendar?'Fechar calendário':'Abrir calendário'}</button>
+                      {showCalendar && <div>
                       <CalendarComponent
                         mode="single"
                         selected={selectedDate}
                         onSelect={(date) => {
                           setSelectedDate(date);
                           setSelectedTime('');
+                          setShowCalendar(false);
                         }}
                         disabled={isDateDisabled}
                         locale={ptBR}
                         className="rounded-xl border pointer-events-auto"
                       />
+                      </div>}
                     </div>
 
                     <div>
@@ -891,7 +864,7 @@ export default function Booking() {
                         <div className="flex items-center justify-center py-8">
                           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                         </div>
-                      ) : allSlots.length === 0 ? (
+                      ) : slotError ? <div role="alert" className="text-sm space-y-3"><p>Não foi possível consultar os horários.</p><Button variant="outline" onClick={()=>void fetchAvailableSlots()}>Tentar novamente</Button></div> : allSlots.length === 0 ? (
                         <div className="text-center py-6 space-y-3">
                           <AlertCircle className="w-8 h-8 text-primary mx-auto" />
                           <p className="text-sm text-muted-foreground">
@@ -946,7 +919,7 @@ export default function Booking() {
                               <span>Excede horário</span>
                             </div>
                           </div>
-                          <div className="grid grid-cols-3 gap-2 max-h-[300px] overflow-y-auto p-1">
+                          <div className="booking-times grid grid-cols-3 gap-2 max-h-[300px] overflow-y-auto p-1">
                             {allSlots.map((slot) => {
                               const isBooked = bookedSlots.includes(slot);
                               const isExceeded = exceededSlots.includes(slot);
@@ -1011,7 +984,7 @@ export default function Booking() {
                               <span className="font-medium">{s.name}</span>
                               <span className="text-muted-foreground">({s.duration_minutes}min)</span>
                             </div>
-                            <span className="text-muted-foreground">R$ {s.price.toFixed(2)}</span>
+                            <span className="text-muted-foreground">{formatCurrency(s.price)}</span>
                           </div>
                         ))}
                       </div>
@@ -1046,31 +1019,12 @@ export default function Booking() {
                     <div className="flex justify-between pt-3 border-t border-border">
                       <span className="text-muted-foreground font-medium">Valor Total</span>
                       <span className="font-bold text-lg text-primary">
-                        R$ {totalPrice.toFixed(2)}
+                        {formatCurrency(totalPrice)}
                       </span>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Seu nome *</Label>
-                      <Input
-                        id="name"
-                        value={clientName}
-                        onChange={(e) => setClientName(e.target.value)}
-                        placeholder="Nome completo"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Telefone (opcional)</Label>
-                      <Input
-                        id="phone"
-                        value={clientPhone}
-                        onChange={(e) => setClientPhone(e.target.value)}
-                        placeholder="(00) 00000-0000"
-                      />
-                    </div>
-                  </div>
+                  <details className="booking-contact" open={!user||undefined}><summary><span><strong>Dados do agendamento</strong><small>{clientName||'Informe seu nome'}{clientPhone?` · ${clientPhone}`:''}</small></span><span className="text-primary text-xs">Editar</span></summary><div className="grid gap-3 sm:grid-cols-2"><div><Label htmlFor="name">Seu nome *</Label><Input id="name" value={clientName} onChange={e=>setClientName(e.target.value)} placeholder="Nome completo"/></div><div><Label htmlFor="phone">Telefone (opcional)</Label><Input id="phone" type="tel" value={clientPhone} onChange={e=>setClientPhone(e.target.value)} placeholder="Telefone com DDD"/></div></div></details>
 
                   {!user ? (
                     <Card className="border-primary/20 bg-primary/5">
@@ -1096,50 +1050,32 @@ export default function Booking() {
                       </CardContent>
                     </Card>
                   ) : (
-                    <div className="space-y-3">
-                      <Label className="text-base font-semibold">Forma de Pagamento</Label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => handleSubmit('local')}
-                          disabled={!canProceed() || submitting}
-                          className="h-auto py-4 flex-col gap-2"
-                        >
-                          {submitting ? (
-                            <Loader2 className="w-6 h-6 animate-spin" />
-                          ) : (
-                            <>
-                              <Clock className="w-6 h-6" />
-                              <span className="text-sm">Pagar no Local</span>
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          type="button"
-                          onClick={() => handleSubmit('pix')}
-                          disabled={!canProceed() || submitting}
-                          className="h-auto py-4 flex-col gap-2"
-                        >
-                          {submitting ? (
-                            <Loader2 className="w-6 h-6 animate-spin" />
-                          ) : (
-                            <>
-                              <Check className="w-6 h-6" />
-                              <span className="text-sm">Pagar via PIX</span>
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
+                    null
                   )}
                 </motion.div>
               )}
             </CardContent>
           </Card>
 
+          {step==='confirm' && user && <div className="booking-payment-row"><div className="space-y-2"><p className="text-sm font-medium">Forma de pagamento</p><div className="payment-choices" role="group" aria-label="Forma de pagamento"><Button type="button" variant="outline" aria-pressed={paymentChoice==='local'} onClick={()=>setPaymentChoice('local')} disabled={submitting}><Clock className="h-4 w-4 mr-1"/>No local</Button><Button type="button" variant="outline" aria-pressed={paymentChoice==='pix'} onClick={()=>setPaymentChoice('pix')} disabled={submitting}><Check className="h-4 w-4 mr-1"/>Pix</Button></div></div></div>}
+
+<div className="booking-selection-anchor">
+                      {step === 'service' && selectedServices.length > 0 && (
+                        <div className="booking-selection" role="status" aria-live="polite">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="font-medium">{selectedServices.length} item(ns) selecionado(s)</p>
+                              <p className="text-sm text-muted-foreground">Duração total: {totalDuration} min</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xl font-bold text-primary">{formatCurrency(totalPrice)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+</div>
           {/* Navigation */}
-          <div className="flex justify-between mt-6">
+          <div className="booking-actions">
             <Button
               variant="outline"
               onClick={prevStep}
@@ -1149,6 +1085,7 @@ export default function Booking() {
               Voltar
             </Button>
 
+            {step==='confirm' && user && <Button onClick={()=>handleSubmit(paymentChoice)} disabled={!canProceed()||submitting}>{submitting?<Loader2 className="h-4 w-4 animate-spin"/>:'Confirmar'}<ArrowRight className="h-4 w-4 ml-2"/></Button>}
             {step !== 'confirm' && (
               <Button
                 onClick={nextStep}

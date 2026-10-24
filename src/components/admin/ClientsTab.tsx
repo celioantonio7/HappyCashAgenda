@@ -1,3 +1,7 @@
+import { useVisibleRefresh } from '@/hooks/useVisibleRefresh';
+import { CollectionPhoto } from '@/components/app/CollectionPhoto';
+import { ListMore } from '@/components/app/ListMore';
+import { prepareProfileImage, uploadCollectionPhoto } from '@/lib/profileImage';
 /**
  * Aba de Clientes do Painel Admin
  * - CRUD de clientes manuais
@@ -42,6 +46,7 @@ import {
 } from "@/components/ui/table";
 
 interface Client {
+  updated_at?: string;
   id: string;
   store_account_id: string;
   owner_user_id: string;
@@ -53,6 +58,10 @@ interface Client {
 }
 
 export function ClientsTab() {
+  const [limit,setLimit]=useState(10);
+  const [photo,setPhoto]=useState<string|null>(null);
+  const [photoVersion,setPhotoVersion]=useState(0);
+  const [preparingPhoto,setPreparingPhoto]=useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -84,6 +93,8 @@ export function ClientsTab() {
     if (data) setClients(data);
     setLoading(false);
   }, [settings.storeAccountId]);
+
+  useVisibleRefresh(()=>void fetchClients(),!!settings.storeAccountId);
 
   useEffect(() => {
     if (!settings.storeAccountId) {
@@ -137,6 +148,7 @@ export function ClientsTab() {
   }, [fetchClients, settings.storeAccountId]);
 
   const openDialog = (client?: Client) => {
+    setPhoto(null);
     if (client) {
       setEditing(client);
       setName(client.name);
@@ -163,8 +175,6 @@ export function ClientsTab() {
       return;
     }
 
-    setSubmitting(true);
-
     const data = {
       owner_user_id: settings.ownerUserId,
       store_account_id: settings.storeAccountId,
@@ -174,36 +184,15 @@ export function ClientsTab() {
       notes: notes || null,
     };
 
-    if (editing) {
-      const { error } = await supabase
-        .from("agenda_clients")
-        .update(data)
-        .eq("id", editing.id);
-      if (error) {
-        toast({
-          title: "Erro",
-          description: "Não foi possível atualizar.",
-          variant: "destructive",
-        });
-      } else {
-        toast({ title: "Cliente atualizado" });
-      }
-    } else {
-      const { error } = await supabase.from("agenda_clients").insert(data);
-      if (error) {
-        toast({
-          title: "Erro",
-          description: "Não foi possível adicionar.",
-          variant: "destructive",
-        });
-      } else {
-        toast({ title: "Cliente adicionado" });
-      }
-    }
-
-    setSubmitting(false);
-    setShowDialog(false);
-    fetchClients();
+    if(submitting||preparingPhoto)return;
+    setSubmitting(true);
+    const id=editing?.id||crypto.randomUUID();
+    try{
+      const {error}=editing?await supabase.from('agenda_clients').update(data).eq('id',id):await supabase.from('agenda_clients').insert({...data,id});
+      if(error)throw error;
+      if(photo){try{await uploadCollectionPhoto(settings.storeAccountId||'','clients',id,photo);setPhotoVersion(Date.now());}catch(error){setEditing({...data,id,created_at:editing?.created_at||new Date().toISOString()});toast({title:'Cliente salvo; foto não enviada',description:error instanceof Error?error.message:'Abra Editar para tentar novamente.',variant:'destructive'});return;}}
+      toast({title:editing?'Cliente atualizado':'Cliente adicionado'});setShowDialog(false);
+    }catch(error){toast({title:'Não foi possível salvar',description:error instanceof Error?error.message:'Tente novamente.',variant:'destructive'});}finally{setSubmitting(false);void fetchClients();}
   };
 
   const confirmRemove = async () => {
@@ -285,10 +274,10 @@ export function ClientsTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((client) => (
+                {filtered.slice(0,limit).map((client) => (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">
-                      {client.name}
+                      <span className="flex items-center gap-3"><CollectionPhoto store={settings.storeAccountId||''} kind="clients" id={client.id} name={client.name} version={`${photoVersion}-${client.updated_at||''}`}/><span>{client.name}</span></span>
                       {client.phone && (
                         <span className="block sm:hidden text-xs text-muted-foreground mt-0.5">
                           {client.phone}
@@ -327,6 +316,7 @@ export function ClientsTab() {
         </Card>
       )}
 
+      <ListMore total={filtered.length} shown={limit} onMore={()=>setLimit(n=>n+10)}/>
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
@@ -339,6 +329,8 @@ export function ClientsTab() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <div>{photo?<img src={photo} alt="Prévia da foto do cliente" className="h-14 w-14 rounded-lg object-cover mb-2"/>:editing?<CollectionPhoto store={settings.storeAccountId||''} kind="clients" id={editing.id} name={editing.name} version={String(photoVersion)}/>:null}<Label htmlFor="client-photo" className="block my-2">Foto do cliente</Label><Input id="client-photo" type="file" accept="image/jpeg,image/png,image/webp" disabled={submitting||preparingPhoto} onChange={async e=>{const file=e.target.files?.[0];if(!file)return;setPreparingPhoto(true);try{setPhoto(await prepareProfileImage(file,256));}catch(error){toast({title:'Confira a foto',description:error instanceof Error?error.message:'Imagem inválida.',variant:'destructive'});}finally{setPreparingPhoto(false);}}}/></div>
+
             <div>
               <Label>Nome *</Label>
               <Input
@@ -377,7 +369,7 @@ export function ClientsTab() {
             <Button variant="outline" onClick={() => setShowDialog(false)}>
               Cancelar
             </Button>
-            <Button onClick={save} disabled={submitting}>
+            <Button onClick={save} disabled={submitting||preparingPhoto}>
               {submitting ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
