@@ -265,7 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
-    const redirectUrl = `${window.location.origin}/reset-password`;
+    const redirectUrl = `${window.location.origin}${import.meta.env.BASE_URL}reset-password`;
     try {
       const captchaToken = await requestTurnstileToken("agenda-password-reset");
       const { error } = await supabase.auth.resetPasswordForEmail(email, {

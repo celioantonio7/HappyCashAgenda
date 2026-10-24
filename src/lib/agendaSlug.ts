@@ -1,3 +1,5 @@
+import { appPathname } from "./appBase";
+
 /** Rotas fixas do app — slugs de empresa não podem colidir com estes paths. */
 export const AGENDA_RESERVED_SLUGS = new Set([
   "login",
@@ -42,13 +44,14 @@ export function isAgendaReservedSlug(value: string | null | undefined) {
 }
 
 export function isAgendaAdminPath(pathname: string) {
+  pathname = appPathname(pathname);
   return AGENDA_ADMIN_PATH_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
 
 export function slugFromPathname(pathname: string): string | null {
-  const segment = normalizeAgendaSlug(pathname.replace(/^\/+|\/+$/g, "").split("/")[0]);
+  const segment = normalizeAgendaSlug(appPathname(pathname).replace(/^\/+|\/+$/g, "").split("/")[0]);
   if (!segment || AGENDA_RESERVED_SLUGS.has(segment)) return null;
   return segment;
 }

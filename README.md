@@ -99,3 +99,28 @@ este modo, mesmo que a variável esteja habilitada.
 ## Acesso administrativo
 
 Consulte [Acesso do dono da barbearia](src/docs/OWNER_ACCESS.md) para a identificação de donos e clientes, o acesso de teste, as permissões por empresa e a ordem de aplicação do complemento de banco. As migrations legadas foram preservadas; a instalação do zero exige os pré-requisitos descritos nesse documento antes da migration antiga de fila.
+
+
+## Publicar no GitHub Pages
+
+O workflow `.github/workflows/deploy-pages.yml` gera o build com base
+`/HappyCashAgenda/` e publica somente `dist` a cada push em `main`.
+
+1. No GitHub, abra **Settings → Secrets and variables → Actions → Variables**.
+   Cadastre `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` com os valores
+   públicos correspondentes do seu ambiente local. Se utilizada, cadastre também
+   `VITE_AGENDA_BUSINESS_SLUG`. Nunca use uma chave `service_role` no frontend.
+2. Em **Settings → Pages → Build and deployment → Source**, selecione **GitHub Actions**.
+3. Envie as alterações ao repositório e acompanhe **Actions → Deploy GitHub Pages**.
+4. Abra `https://celioantonio7.github.io/HappyCashAgenda/` após o workflow concluir.
+
+Para reproduzir o build localmente:
+
+```sh
+VITE_BASE_PATH=/HappyCashAgenda/ npm run build
+npm run preview
+```
+
+O workflow também copia `index.html` para `404.html` para que o React Router
+carregue links diretos às rotas. Nesses acessos, o GitHub Pages ainda retorna
+status HTTP 404, mas entrega o aplicativo. O build padrão continua usando `/`.

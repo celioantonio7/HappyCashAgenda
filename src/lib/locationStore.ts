@@ -1,3 +1,5 @@
+import { appPathname } from "./appBase";
+
 type LocationSnapshot = {
   pathname: string;
   search: string;
@@ -11,7 +13,7 @@ let snapshot: LocationSnapshot = {
 };
 
 const readSnapshot = (): LocationSnapshot => ({
-  pathname: window.location.pathname,
+  pathname: appPathname(window.location.pathname),
   search: window.location.search,
 });
 

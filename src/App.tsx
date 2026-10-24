@@ -30,7 +30,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
+        <BrowserRouter basename={import.meta.env.BASE_URL} future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
           <AgendaBrandingProvider>
             <CartProvider>
               <TooltipProvider>
