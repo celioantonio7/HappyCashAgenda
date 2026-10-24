@@ -639,3 +639,12 @@ html[data-app-display="standalone"] { touch-action:pan-x pan-y; }
 }
 .sidebar-toggle:hover { color:hsl(var(--primary)); }
 .sidebar-toggle:focus-visible { outline:2px solid hsl(var(--primary)); outline-offset:2px; border-radius:8px; }
+
+.owner-sidebar-heading { display:flex; align-items:center; gap:4px; margin-bottom:20px; flex:none; min-width:0; }
+.owner-sidebar .owner-sidebar-heading .brand { flex:1; min-width:0; padding:0; gap:8px; }
+.owner-sidebar-heading .sidebar-toggle { width:32px; }
+.owner-sidebar-heading .brand-mark { flex-shrink:0; }
+@media(min-width:1024px) {
+  .sidebar-collapsed .owner-sidebar-heading { flex-direction:column; gap:4px; }
+  .sidebar-collapsed .owner-sidebar .owner-sidebar-heading .brand { flex:none; padding:0; }
+}
