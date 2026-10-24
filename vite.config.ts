@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
     port: 8080,
   },
   plugins: [react(), mode === "development" && componentTagger(), VitePWA({
-    registerType: 'prompt',
+    registerType: 'autoUpdate',
     injectRegister: null,
     includeAssets: ['icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'],
     manifest: { id: base, name: 'HappyCash Agenda', short_name: 'Agenda', description: 'Sua barbearia, seus horários e seus atendimentos.', lang: 'pt-BR', start_url: base, scope: base, display: 'standalone', background_color: '#090B0A', theme_color: '#090B0A', icons: [

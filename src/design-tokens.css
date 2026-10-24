@@ -648,3 +648,18 @@ html[data-app-display="standalone"] { touch-action:pan-x pan-y; }
   .sidebar-collapsed .owner-sidebar-heading { flex-direction:column; gap:4px; }
   .sidebar-collapsed .owner-sidebar .owner-sidebar-heading .brand { flex:none; padding:0; }
 }
+
+/* Reserve the bottom navigation and subtract notices from the booking height. */
+.app-frame[data-page="agendamento"] .app-content,
+.app-frame[data-page="booking"] .app-content {
+  display:flex;
+  flex-direction:column;
+  margin-bottom:calc(86px + env(safe-area-inset-bottom, 0px));
+  padding-bottom:0;
+}
+.app-frame .booking-flow { flex:1; height:auto; }
+.app-content > .offline-strip { flex:none; }
+@media(min-width:1024px) {
+  .app-frame[data-page="agendamento"] .app-content,
+  .app-frame[data-page="booking"] .app-content { margin-bottom:110px; padding-bottom:0; }
+}
