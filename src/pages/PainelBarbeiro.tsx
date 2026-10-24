@@ -29,7 +29,7 @@ import { motion } from 'framer-motion';
 import {
   Calendar, Clock, TrendingUp, DollarSign,
   CheckCircle, XCircle, AlertCircle, Scissors, Plus, UserPlus, Bell,
-  Wifi, WifiOff, Info, Trophy
+  Info, Trophy
 } from '@/components/animated-icons';
 import { format, startOfMonth, endOfMonth, isWithinInterval, subDays, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -182,7 +182,6 @@ export default function BarberDashboard() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [additionalServiceId, setAdditionalServiceId] = useState('');
   const [extraServices, setExtraServices] = useState<{appointment_id: string; services: {id: string; name: string; price: number; duration_minutes?: number}[]}[]>([]);
-  const [realtimeActive, setRealtimeActive] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [detailsAppointment, setDetailsAppointment] = useState<Appointment | null>(null);
   const [appointmentPendingCancel, setAppointmentPendingCancel] = useState<Appointment | null>(null);
@@ -262,7 +261,6 @@ export default function BarberDashboard() {
           filter: `barber_id=eq.${barberData.id}`,
         },
         (payload) => {
-          setRealtimeActive(true);
           const newApt = payload.new as AppointmentRealtimeRow;
           if (shouldPlayAgendaSound(settings, 'new_appointment')) {
             playNotificationSound();
@@ -287,7 +285,6 @@ export default function BarberDashboard() {
           filter: `barber_id=eq.${barberData.id}`,
         },
         (payload) => {
-          setRealtimeActive(true);
           const updatedApt = payload.new as AppointmentRealtimeRow;
           const oldApt = payload.old as AppointmentRealtimeRow;
 
@@ -362,9 +359,7 @@ export default function BarberDashboard() {
           fetchAppointments(barberData.id);
         }
       )
-      .subscribe((status) => {
-        setRealtimeActive(status === 'SUBSCRIBED');
-      });
+      .subscribe();
     const servicesChannel = supabase
       .channel(`barber-appointment-services-${barberData.id}`)
       .on(
@@ -869,21 +864,6 @@ export default function BarberDashboard() {
               )}
               <div>
                 <h1 className="font-serif text-2xl font-bold">Olá, {barberData?.name?.split(' ')[0]}!</h1>
-                <div className="flex items-center gap-2 mt-1">
-                  {realtimeActive ? (
-                    <span className="flex items-center gap-1 text-xs text-primary">
-                      <Wifi className="w-3 h-3" /> Realtime ativo
-                    </span>
-                  ) : barberIdFromSession ? (
-                    <span className="flex items-center gap-1 text-xs text-amber-600">
-                      <WifiOff className="w-3 h-3" /> Polling ativo
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Wifi className="w-3 h-3" /> Conectando...
-                    </span>
-                  )}
-                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
