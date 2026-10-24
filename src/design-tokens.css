@@ -663,3 +663,17 @@ html[data-app-display="standalone"] { touch-action:pan-x pan-y; }
   .app-frame[data-page="agendamento"] .app-content,
   .app-frame[data-page="booking"] .app-content { margin-bottom:110px; padding-bottom:0; }
 }
+
+/* Mobile drawers stay inside the screen's status bar and home indicator. */
+@media(max-width:1023px) {
+  .owner-sidebar {
+    top:calc(env(safe-area-inset-top, 0px) + 16px);
+    bottom:calc(env(safe-area-inset-bottom, 0px) + 16px);
+    left:calc(env(safe-area-inset-left, 0px) + 8px);
+    width:min(280px, calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px) - 16px));
+    padding:16px 12px;
+    border:1px solid #2a332d;
+    border-radius:16px;
+    overscroll-behavior:contain;
+  }
+}
