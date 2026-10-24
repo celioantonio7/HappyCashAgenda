@@ -306,7 +306,18 @@ h1,h2,h3,h4 { font-family: 'Inter', sans-serif; }
 html,body,#root { min-height:100%; }
 body:has(.app-frame) { overflow:hidden; }
 .app-frame { height:100dvh; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
-.app-topbar { flex:none; position:relative; }
+/* Keep the top menu above scrolling panels, including installed PWA safe areas. */
+.app-topbar {
+  flex:none;
+  position:sticky;
+  top:0;
+  z-index:40;
+  box-sizing:content-box;
+  padding-top:env(safe-area-inset-top, 0px);
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  background:#090b0a;
+}
 .app-content { flex:1; min-height:0; width:100%; overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable; padding-top:0!important; }
 .owner-workspace .app-content,.staff-workspace .app-content { max-width:none; padding-bottom:0; }
 .owner-dashboard,.staff-dashboard { height:100%; min-height:0; }
