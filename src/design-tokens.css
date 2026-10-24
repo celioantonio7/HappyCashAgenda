@@ -624,3 +624,18 @@ html[data-app-display="standalone"] { touch-action:pan-x pan-y; }
   .booking-flow .booking-step-card,.owner-tabs > [role=tabpanel],
   .staff-appointment-tabs > [role=tabpanel] { overflow:visible; }
 }
+
+/* A single directional arrow controls the sidebar, without a button frame. */
+.sidebar-toggle {
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  width:44px;
+  height:44px;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#a1aba3;
+}
+.sidebar-toggle:hover { color:hsl(var(--primary)); }
+.sidebar-toggle:focus-visible { outline:2px solid hsl(var(--primary)); outline-offset:2px; border-radius:8px; }
