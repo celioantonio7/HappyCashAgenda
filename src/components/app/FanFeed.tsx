@@ -1,3 +1,4 @@
+import { AnimatedNumber } from '@/components/app/AnimatedNumber';
 import { useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, ArrowRight } from '@/components/animated-icons';
@@ -22,7 +23,7 @@ export function FanFeed({ items }: { items: FeedItem[] }) {
       })}
     </motion.div>
     <div className="fan-controls"><button className="icon-button" aria-label="Publicação anterior" onClick={() => move(-1)}><ArrowLeft /></button><div className="fan-dots">{items.map((item,index)=><button key={item.id} aria-label={`Ver publicação ${index+1}: ${item.title}`} aria-current={index===current?'true':undefined} onClick={()=>{setDrag(0);setCurrent(index);}}><span/></button>)}</div><button className="icon-button" aria-label="Próxima publicação" onClick={() => move(1)}><ArrowRight /></button></div>
-    <div className="fan-post-summary" aria-live="polite"><p className="fan-post-counter">{current+1} de {items.length} · {active.category}</p><h2>{active.title}</h2><p>{active.body}</p></div>
+    <div className="fan-post-summary" aria-live="polite"><p className="fan-post-counter"><AnimatedNumber value={current+1}/> de <AnimatedNumber value={items.length}/> · {active.category}</p><h2>{active.title}</h2><p>{active.body}</p></div>
     <Dialog open={!!opened} onOpenChange={open=>{if(!open)setOpened(null);}}><DialogContent className="feed-post-detail"><DialogTitle>{opened?.title}</DialogTitle><DialogDescription>Prévia fictícia · {opened?.category}</DialogDescription>{opened&&<><img src={opened.image} alt={`Imagem ilustrativa: ${opened.title}`}/><p>{opened.body}</p></>}</DialogContent></Dialog>
   </section>;
 }

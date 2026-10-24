@@ -1,3 +1,4 @@
+import { LoadingState } from '@/components/app/RingLoader';
 /**
  * Aba de Horários de Funcionamento do Painel Admin
  * - Edição dos horários por dia da semana
@@ -86,7 +87,7 @@ export function BusinessHoursTab({ isAdmin, onUpdate }: BusinessHoursTabProps) {
     onUpdate?.();
   };
 
-  if (loading) return <div className="text-center py-8 text-muted-foreground">Carregando...</div>;
+  if (loading) return <LoadingState label="Carregando horários…"/>;
 
   return (
     <Card>

@@ -1,3 +1,5 @@
+import { RingLoader as Loader2 } from '@/components/app/RingLoader';
+import { AnimatedNumber } from '@/components/app/AnimatedNumber';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { ChevronRight } from '@/components/animated-icons';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
@@ -34,7 +36,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Calendar, Clock, Users, Scissors, TrendingUp,
-  Plus, Edit, Check, X, Loader2, Phone, Upload, Image,
+  Plus, Edit, Check, X, Phone, Upload, Image,
   BarChart3, CalendarDays, Filter, Search, Trash2, DollarSign,
   Package, ShoppingBag, AlertCircle, CheckCircle, XCircle, Eye, EyeOff, Key,
   Trophy, MapPin, ClockIcon
@@ -1250,7 +1252,7 @@ export default function AdminDashboard() {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          <Loader2 className="w-16 h-16 text-muted-foreground" />
         </div>
       </Layout>
     );
@@ -1319,7 +1321,7 @@ export default function AdminDashboard() {
             </TabsContent>
 
             <TabsContent value="overview">
-              {overviewSection==='operation'?<div className="overview-status-summary"><div><small>Hoje</small><strong>{todayAppointments.length}</strong></div><div><small>Pendentes</small><strong>{appointments.filter(a=>a.status==='scheduled').length}</strong></div><div><small>Pix a conferir</small><strong>{pendingPixAppointments.length}</strong></div></div>:<div>
+              {overviewSection==='operation'?<div className="overview-status-summary"><div><small>Hoje</small><strong><AnimatedNumber value={todayAppointments.length}/></strong></div><div><small>Pendentes</small><strong><AnimatedNumber value={appointments.filter(a=>a.status==='scheduled').length}/></strong></div><div><small>Pix a conferir</small><strong><AnimatedNumber value={pendingPixAppointments.length}/></strong></div></div>:<div>
               {/* Stats Cards */}
               <div className="owner-kpis">
                 <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
@@ -1327,7 +1329,7 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Hoje</p>
-                        <p className="text-3xl font-bold text-accent">{todayAppointments.length}</p>
+                        <p className="text-3xl font-bold text-accent"><AnimatedNumber value={todayAppointments.length}/></p>
                         <p className="text-xs text-muted-foreground">agendamentos</p>
                       </div>
                       <div className="p-3 bg-accent/10 rounded-full">
@@ -1342,8 +1344,8 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Esta Semana</p>
-                        <p className="text-2xl font-bold">{weeklyAppointments.length}</p>
-                        <p className="text-xs text-muted-foreground">R$ {weeklyRevenue.toFixed(0)}</p>
+                        <p className="text-2xl font-bold"><AnimatedNumber value={weeklyAppointments.length}/></p>
+                        <p className="text-xs text-muted-foreground">R$ <AnimatedNumber value={weeklyRevenue} decimals={0}/></p>
                       </div>
                       <div className="p-3 bg-primary/10 rounded-full">
                         <CalendarDays className="w-6 h-6 text-primary" />
@@ -1357,7 +1359,7 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Este Mês</p>
-                        <p className="text-2xl font-bold">{monthlyAppointments.length}</p>
+                        <p className="text-2xl font-bold"><AnimatedNumber value={monthlyAppointments.length}/></p>
                         <p className="text-xs text-muted-foreground">agendamentos</p>
                       </div>
                       <div className="p-3 bg-primary/10 rounded-full">
@@ -1372,8 +1374,8 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">Faturamento Mensal</p>
-                        <p className="text-2xl font-bold text-primary">R$ {monthlyRevenue.toFixed(0)}</p>
-                        <p className="text-xs text-muted-foreground">{monthlyCompletedAppointments.length} concluídos</p>
+                        <p className="text-2xl font-bold text-primary"><AnimatedNumber value={monthlyRevenue} currency/></p>
+                        <p className="text-xs text-muted-foreground"><AnimatedNumber value={monthlyCompletedAppointments.length}/> concluídos</p>
                       </div>
                       <div className="p-3 bg-primary/10 rounded-full">
                         <TrendingUp className="w-6 h-6 text-primary" />
@@ -1402,8 +1404,8 @@ export default function AdminDashboard() {
                   ) : (
                     <div className="space-y-3">
                       {[...todayAppointments].sort((a,b)=>a.appointment_time.localeCompare(b.appointment_time)).slice(0,5).map(apt=><details key={apt.id} className="appointment-summary">
-                        <summary><time className="appointment-time">{apt.appointment_time.slice(0,5)}</time><span className="min-w-0 flex-1"><strong className="block truncate">{apt.client_name}</strong><small className="block truncate text-muted-foreground">{apt.service?.name} · {apt.barber?.name}</small></span><span className="text-right"><span className={`status-pill status-${apt.status}`}>{apt.status==='scheduled'?'Pendente':apt.status==='completed'?'Concluído':'Cancelado'}</span><small className="block mt-1">{formatCurrency(getAppointmentTotalPrice(apt))}</small></span></summary>
-                        <div className="appointment-expanded"><p className="text-sm text-muted-foreground">{apt.client_phone||'Telefone não informado'}</p>{apt.extraServices.map(service=><p key={service.id} className="text-sm">+ {service.name} · {formatCurrency(service.price)}</p>)}<div className="flex gap-2 mt-3"><Button size="sm" variant="outline" onClick={()=>updateAppointmentStatus(apt.id,'completed')}><Check className="h-4 w-4 mr-1"/>Concluir</Button><Button size="sm" variant="outline" className="text-destructive" onClick={()=>updateAppointmentStatus(apt.id,'cancelled')}><X className="h-4 w-4 mr-1"/>Cancelar</Button></div></div>
+                        <summary><time className="appointment-time">{apt.appointment_time.slice(0,5)}</time><span className="min-w-0 flex-1"><strong className="block truncate">{apt.client_name}</strong><small className="block truncate text-muted-foreground">{apt.service?.name} · {apt.barber?.name}</small></span><span className="text-right"><span className={`status-pill status-${apt.status}`}>{apt.status==='scheduled'?'Pendente':apt.status==='completed'?'Concluído':'Cancelado'}</span><small className="block mt-1"><AnimatedNumber value={getAppointmentTotalPrice(apt)??0} currency decimals={2}/></small></span></summary>
+                        <div className="appointment-expanded"><p className="text-sm text-muted-foreground">{apt.client_phone||'Telefone não informado'}</p>{apt.extraServices.map(service=><p key={service.id} className="text-sm">+ {service.name} · <AnimatedNumber value={service.price??0} currency decimals={2}/></p>)}<div className="flex gap-2 mt-3"><Button size="sm" variant="outline" onClick={()=>updateAppointmentStatus(apt.id,'completed')}><Check className="h-4 w-4 mr-1"/>Concluir</Button><Button size="sm" variant="outline" className="text-destructive" onClick={()=>updateAppointmentStatus(apt.id,'cancelled')}><X className="h-4 w-4 mr-1"/>Cancelar</Button></div></div>
                       </details>)}
                     </div>
                   )}
@@ -1426,7 +1428,7 @@ export default function AdminDashboard() {
                               <div className="min-w-0">
                                 <p className="truncate font-medium">{apt.client_name}</p>
                                 <p className="text-xs text-muted-foreground">
-                                  {format(parseLocalDate(apt.appointment_date), "dd/MM", { locale: ptBR })} {apt.appointment_time.slice(0, 5)} • {formatCurrency(getAppointmentTotalPrice(apt))}
+                                  {format(parseLocalDate(apt.appointment_date), "dd/MM", { locale: ptBR })} {apt.appointment_time.slice(0, 5)} • <AnimatedNumber value={getAppointmentTotalPrice(apt)??0} currency decimals={2}/>
                                 </p>
                               </div>
                               <Button size="sm" variant="outline" onClick={() => confirmAppointmentPayment(apt.id)}>
@@ -1452,7 +1454,7 @@ export default function AdminDashboard() {
                           {lowStockAgendaProducts.map((product) => (
                             <div key={product.id} className="flex items-center justify-between gap-3 text-sm">
                               <span className="truncate">{product.name}</span>
-                              <span className="shrink-0 font-medium text-destructive">Estoque {product.stock_quantity}</span>
+                              <span className="shrink-0 font-medium text-destructive">Estoque <AnimatedNumber value={product.stock_quantity}/></span>
                             </div>
                           ))}
                         </div>
@@ -1494,7 +1496,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-sm text-muted-foreground">Ticket Médio</p>
-                          <p className="text-2xl font-bold">R$ {monthlyAverageTicket.toFixed(0)}</p>
+                          <p className="text-2xl font-bold"><AnimatedNumber value={monthlyAverageTicket} currency/></p>
                           <p className="text-xs text-muted-foreground">serviços concluídos</p>
                         </div>
                         <div className="p-3 bg-primary/10 rounded-full">
@@ -1509,8 +1511,8 @@ export default function AdminDashboard() {
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-sm text-muted-foreground">Cancelamento</p>
-                          <p className="text-2xl font-bold">{monthlyCancellationRate.toFixed(0)}%</p>
-                          <p className="text-xs text-muted-foreground">{monthlyCancelledAppointments.length} no mês</p>
+                          <p className="text-2xl font-bold"><AnimatedNumber value={monthlyCancellationRate} suffix="%"/></p>
+                          <p className="text-xs text-muted-foreground"><AnimatedNumber value={monthlyCancelledAppointments.length}/> no mês</p>
                         </div>
                         <div className="p-3 bg-destructive/10 rounded-full">
                           <XCircle className="w-6 h-6 text-destructive" />
@@ -1524,7 +1526,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-sm text-muted-foreground">Pix Pendente</p>
-                          <p className="text-2xl font-bold">{pendingPixAppointments.length}</p>
+                          <p className="text-2xl font-bold"><AnimatedNumber value={pendingPixAppointments.length}/></p>
                           <p className="text-xs text-muted-foreground">aguardando conferência</p>
                         </div>
                         <div className="p-3 bg-amber-500/10 rounded-full">
@@ -1539,7 +1541,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-sm text-muted-foreground">Estoque Baixo</p>
-                          <p className="text-2xl font-bold">{lowStockAgendaProducts.length}</p>
+                          <p className="text-2xl font-bold"><AnimatedNumber value={lowStockAgendaProducts.length}/></p>
                           <p className="text-xs text-muted-foreground">produtos com 3 ou menos</p>
                         </div>
                         <div className="p-3 bg-primary/10 rounded-full">
@@ -1603,7 +1605,7 @@ export default function AdminDashboard() {
                         <AlertCircle className="w-5 h-5 text-amber-500" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold">{appointments.filter(a => a.status === 'scheduled').length}</p>
+                        <p className="text-2xl font-bold"><AnimatedNumber value={appointments.filter(a => a.status === 'scheduled').length}/></p>
                         <p className="text-sm text-muted-foreground">Agendados</p>
                       </div>
                     </div>
@@ -1616,7 +1618,7 @@ export default function AdminDashboard() {
                         <CheckCircle className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-primary">{appointments.filter(a => a.status === 'completed').length}</p>
+                        <p className="text-2xl font-bold text-primary"><AnimatedNumber value={appointments.filter(a => a.status === 'completed').length}/></p>
                         <p className="text-sm text-muted-foreground">Concluídos</p>
                       </div>
                     </div>
@@ -1629,7 +1631,7 @@ export default function AdminDashboard() {
                         <XCircle className="w-5 h-5 text-destructive" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-destructive">{appointments.filter(a => a.status === 'cancelled').length}</p>
+                        <p className="text-2xl font-bold text-destructive"><AnimatedNumber value={appointments.filter(a => a.status === 'cancelled').length}/></p>
                         <p className="text-sm text-muted-foreground">Cancelados</p>
                       </div>
                     </div>
@@ -1646,7 +1648,7 @@ export default function AdminDashboard() {
                      filterStatus === 'cancelled' ? 'Agendamentos Cancelados' : 'Todos os Agendamentos'}
                   </CardTitle>
                   <CardDescription>
-                    {filteredAppointments.length} agendamentos encontrados
+                    <AnimatedNumber value={filteredAppointments.length}/> agendamentos encontrados
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1735,10 +1737,10 @@ export default function AdminDashboard() {
                                   {apt.barber?.name}
                                 </p>
                                 <div className="mt-2">
-                                  <p className="text-sm">{apt.service?.name} <span className="text-muted-foreground">({formatCurrency(apt.service?.price)})</span></p>
+                                  <p className="text-sm">{apt.service?.name} <span className="text-muted-foreground">(<AnimatedNumber value={apt.service?.price??0} currency decimals={2}/>)</span></p>
                                   {apt.extraServices.length > 0 && apt.extraServices.map(s => (
                                     <p key={s.id} className="text-xs text-primary">
-                                      + {s.name} ({formatCurrency(s.price)})
+                                      + {s.name} (<AnimatedNumber value={s.price??0} currency decimals={2}/>)
                                     </p>
                                   ))}
                                 </div>
@@ -1746,12 +1748,12 @@ export default function AdminDashboard() {
 
                               <div className="flex flex-col items-end gap-2 shrink-0">
                                 <div className="text-right">
-                                  <p className="text-sm font-semibold">{formatCurrency(totalPrice)}</p>
+                                  <p className="text-sm font-semibold"><AnimatedNumber value={totalPrice??0} currency decimals={2}/></p>
                                   <p className="text-xs text-muted-foreground flex items-center justify-end gap-1">
-                                    <Clock className="w-3 h-3" /> {totalDuration} min
+                                    <Clock className="w-3 h-3" /> <AnimatedNumber value={totalDuration}/> min
                                   </p>
                                   {apt.extraServices.length > 0 && (
-                                    <p className="text-xs text-primary">{apt.extraServices.length + 1} serviços</p>
+                                    <p className="text-xs text-primary"><AnimatedNumber value={apt.extraServices.length + 1}/> serviços</p>
                                   )}
                                 </div>
                                 <StatusBadge status={apt.status} />
@@ -1841,10 +1843,10 @@ export default function AdminDashboard() {
                                 </TableCell>
                                 <TableCell>
                                   <div>
-                                    <p className="text-xs sm:text-sm">{apt.service?.name} <span className="text-muted-foreground">({formatCurrency(apt.service?.price)})</span></p>
+                                    <p className="text-xs sm:text-sm">{apt.service?.name} <span className="text-muted-foreground">(<AnimatedNumber value={apt.service?.price??0} currency decimals={2}/>)</span></p>
                                     {apt.extraServices.length > 0 && apt.extraServices.map(s => (
                                       <p key={s.id} className="text-xs text-primary">
-                                        + {s.name} ({formatCurrency(s.price)})
+                                        + {s.name} (<AnimatedNumber value={s.price??0} currency decimals={2}/>)
                                       </p>
                                     ))}
                                   </div>
@@ -1852,12 +1854,12 @@ export default function AdminDashboard() {
                                 <TableCell className="text-xs sm:text-sm">{apt.barber?.name}</TableCell>
                                 <TableCell>
                                   <div>
-                                    <span className="font-medium text-xs sm:text-sm">{formatCurrency(totalPrice)}</span>
+                                    <span className="font-medium text-xs sm:text-sm"><AnimatedNumber value={totalPrice??0} currency decimals={2}/></span>
                                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                      <Clock className="w-3 h-3" /> {totalDuration} min
+                                      <Clock className="w-3 h-3" /> <AnimatedNumber value={totalDuration}/> min
                                     </p>
                                     {apt.extraServices.length > 0 && (
-                                      <p className="text-xs text-primary">{apt.extraServices.length + 1} serviços</p>
+                                      <p className="text-xs text-primary"><AnimatedNumber value={apt.extraServices.length + 1}/> serviços</p>
                                     )}
                                   </div>
                                 </TableCell>
@@ -1910,20 +1912,20 @@ export default function AdminDashboard() {
                     <div className="grid sm:grid-cols-3 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Total de Agendamentos</p>
-                        <p className="text-xl font-bold">{monthlyAppointments.length}</p>
+                        <p className="text-xl font-bold"><AnimatedNumber value={monthlyAppointments.length}/></p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Concluídos</p>
                         <p className="text-xl font-bold text-primary">
-                          {appointments.filter(a => {
+                          <AnimatedNumber value={appointments.filter(a => {
                             const date = new Date(a.appointment_date);
                             return isWithinInterval(date, { start: monthStart, end: monthEnd }) && a.status === 'completed';
-                          }).length}
+                          }).length}/>
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Faturamento Estimado</p>
-                        <p className="text-xl font-bold text-primary">{formatCurrency(monthlyRevenue)}</p>
+                        <p className="text-xl font-bold text-primary"><AnimatedNumber value={monthlyRevenue??0} currency decimals={2}/></p>
                       </div>
                     </div>
                   </div>
@@ -1942,7 +1944,7 @@ export default function AdminDashboard() {
                         <div>
                           <p className="text-sm text-muted-foreground">Total a Pagar</p>
                           <p className="text-2xl font-bold text-primary">
-                            {formatCurrency(getBarberCommissions().reduce((sum, c) => sum + c.totalCommission, 0))}
+                            <AnimatedNumber value={getBarberCommissions().reduce((sum, c) => sum + c.totalCommission, 0)??0} currency decimals={2}/>
                           </p>
                           <p className="text-xs text-muted-foreground">neste mês</p>
                         </div>
@@ -1959,7 +1961,7 @@ export default function AdminDashboard() {
                         <div>
                           <p className="text-sm text-muted-foreground">{settings.serviceLabel} Concluídos</p>
                           <p className="text-2xl font-bold">
-                            {getBarberCommissions().reduce((sum, c) => sum + c.totalServices, 0)}
+                            <AnimatedNumber value={getBarberCommissions().reduce((sum, c) => sum + c.totalServices, 0)}/>
                           </p>
                           <p className="text-xs text-muted-foreground">no mês</p>
                         </div>
@@ -1976,7 +1978,7 @@ export default function AdminDashboard() {
                         <div>
                           <p className="text-sm text-muted-foreground">Faturamento Bruto</p>
                           <p className="text-2xl font-bold">
-                            {formatCurrency(getBarberCommissions().reduce((sum, c) => sum + c.totalRevenue, 0))}
+                            <AnimatedNumber value={getBarberCommissions().reduce((sum, c) => sum + c.totalRevenue, 0)??0} currency decimals={2}/>
                           </p>
                           <p className="text-xs text-muted-foreground">concluídos</p>
                         </div>
@@ -2024,14 +2026,14 @@ export default function AdminDashboard() {
                                 <div className="min-w-0">
                                   <p className="font-semibold truncate">{barber.name}</p>
                                   <p className="text-sm text-muted-foreground">
-                                    Comissão: {formatCurrency(barber.commission)}/{settings.serviceLabel.toLowerCase()}
+                                    Comissão: <AnimatedNumber value={barber.commission??0} currency decimals={2}/>/{settings.serviceLabel.toLowerCase()}
                                   </p>
                                 </div>
                               </div>
 
                               <div className="text-right shrink-0">
                                 <p className="text-2xl font-bold text-primary">
-                                  {formatCurrency(totalCommission)}
+                                  <AnimatedNumber value={totalCommission??0} currency decimals={2}/>
                                 </p>
                                 <p className="text-xs text-muted-foreground">a pagar</p>
                               </div>
@@ -2039,16 +2041,16 @@ export default function AdminDashboard() {
 
                             <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-border/50">
                               <div className="text-center">
-                                <p className="text-lg font-semibold">{totalServices}</p>
+                                <p className="text-lg font-semibold"><AnimatedNumber value={totalServices}/></p>
                                 <p className="text-xs text-muted-foreground">serviços</p>
                               </div>
                               <div className="text-center">
-                                <p className="text-lg font-semibold">{formatCurrency(totalRevenue)}</p>
+                                <p className="text-lg font-semibold"><AnimatedNumber value={totalRevenue??0} currency decimals={2}/></p>
                                 <p className="text-xs text-muted-foreground">faturou</p>
                               </div>
                               <div className="text-center">
                                 <p className="text-lg font-semibold text-primary">
-                                  {((totalCommission / totalRevenue) * 100 || 0).toFixed(0)}%
+                                  <AnimatedNumber value={((totalCommission / totalRevenue) * 100 || 0)} decimals={0}/>%
                                 </p>
                                 <p className="text-xs text-muted-foreground">comissão</p>
                               </div>
@@ -2077,7 +2079,7 @@ export default function AdminDashboard() {
                 <CardContent>
                   <div className="space-y-3">
                     {barbers.slice(0,listLimit).map(barber=><div key={barber.id} className={cn('collection-row',!barber.is_active&&'opacity-60')}>
-                      {barber.photo_url?<img className="collection-photo object-cover" src={barber.photo_url} alt={barber.name}/>:<span className="collection-photo"><Users/></span>}<span className="min-w-0 flex-1"><strong className="block truncate font-medium text-sm">{barber.name}</strong><small className="block text-xs text-muted-foreground mt-1">Comissão: R$ {barber.commission?.toFixed(2)||'0,00'}</small>{!barber.is_active&&<small className="text-xs text-destructive">Inativo</small>}</span>
+                      {barber.photo_url?<img className="collection-photo object-cover" src={barber.photo_url} alt={barber.name}/>:<span className="collection-photo"><Users/></span>}<span className="min-w-0 flex-1"><strong className="block truncate font-medium text-sm">{barber.name}</strong><small className="block text-xs text-muted-foreground mt-1">Comissão: <AnimatedNumber value={barber.commission??0} currency decimals={2}/></small>{!barber.is_active&&<small className="text-xs text-destructive">Inativo</small>}</span>
                       <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`Gerenciar ${barber.name}`}><ChevronRight className="h-4 w-4"/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={()=>openBarberDialog(barber)}><Edit className="h-4 w-4 mr-2"/>Editar dados e foto</DropdownMenuItem><DropdownMenuItem onSelect={()=>toggleBarberActive(barber)}>{barber.is_active?'Desativar':'Ativar'}</DropdownMenuItem><DropdownMenuItem className="text-destructive" onSelect={()=>deleteBarber(barber)}><Trash2 className="h-4 w-4 mr-2"/>Excluir</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
                     </div>)}
                   </div>
@@ -2101,7 +2103,7 @@ export default function AdminDashboard() {
                 <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
                   <div className="space-y-3">
                     {services.slice(0,listLimit).map(service=><div key={service.id} className={cn('collection-row',!service.is_active&&'opacity-60')}>
-                      <CollectionPhoto store={settings.storeAccountId||''} kind="services" id={service.id} name={service.name} version={String(photoVersion)}/><span className="min-w-0 flex-1"><strong className="block truncate font-medium text-sm">{service.name}</strong><small className="block text-xs text-muted-foreground mt-1">{service.duration_minutes} min · {formatCurrency(service.price)}</small>{!service.is_active&&<small className="text-xs text-destructive">Inativo</small>}</span>
+                      <CollectionPhoto store={settings.storeAccountId||''} kind="services" id={service.id} name={service.name} version={String(photoVersion)}/><span className="min-w-0 flex-1"><strong className="block truncate font-medium text-sm">{service.name}</strong><small className="block text-xs text-muted-foreground mt-1"><AnimatedNumber value={service.duration_minutes}/> min · <AnimatedNumber value={service.price??0} currency decimals={2}/></small>{!service.is_active&&<small className="text-xs text-destructive">Inativo</small>}</span>
                       <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`Gerenciar ${service.name}`}><ChevronRight className="h-4 w-4"/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={()=>openServiceDialog(service)}><Edit className="h-4 w-4 mr-2"/>Editar dados e foto</DropdownMenuItem><DropdownMenuItem onSelect={()=>toggleServiceActive(service)}>{service.is_active?'Desativar':'Ativar'}</DropdownMenuItem><DropdownMenuItem className="text-destructive" onSelect={()=>deleteService(service)}><Trash2 className="h-4 w-4 mr-2"/>Excluir</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
                     </div>)}
                   </div>
@@ -2147,8 +2149,8 @@ export default function AdminDashboard() {
                             <p className="font-medium">{product.name}</p>
                             {product.category && <p className="text-xs text-muted-foreground">{product.category}</p>}
                             <div className="flex items-center justify-between mt-2">
-                              <span className="font-bold text-primary">{formatCurrency(product.price)}</span>
-                              <span className="text-sm text-muted-foreground">Estoque: {product.stock_quantity}</span>
+                              <span className="font-bold text-primary"><AnimatedNumber value={product.price??0} currency decimals={2}/></span>
+                              <span className="text-sm text-muted-foreground">Estoque: <AnimatedNumber value={product.stock_quantity}/></span>
                             </div>
                             {!product.is_active && <span className="text-xs text-destructive">Inativo</span>}
                           </div>
@@ -2334,7 +2336,7 @@ export default function AdminDashboard() {
                 Cancelar
               </Button>
               <Button type="submit" disabled={submitting} size="sm" className="flex-1 sm:flex-none">
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar'}
+                {submitting ? <Loader2 className="w-6 h-6" /> : 'Salvar'}
               </Button>
             </DialogFooter>
           </form>
@@ -2394,7 +2396,7 @@ export default function AdminDashboard() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowServiceDialog(false)}>Cancelar</Button>
             <Button onClick={saveService} disabled={submitting}>
-              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar'}
+              {submitting ? <Loader2 className="w-6 h-6" /> : 'Salvar'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2481,7 +2483,7 @@ export default function AdminDashboard() {
               Cancelar
             </Button>
             <Button onClick={saveProduct} disabled={submitting} size="sm" className="flex-1 sm:flex-none">
-              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar'}
+              {submitting ? <Loader2 className="w-6 h-6" /> : 'Salvar'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,3 +1,5 @@
+import { AnimatedNumber } from '@/components/app/AnimatedNumber';
+import { RingLoader as Loader2 } from '@/components/app/RingLoader';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { useVisibleRefresh } from '@/hooks/useVisibleRefresh';
 import { isAgendaDemo, demoProducts } from "@/lib/agendaDemo";
@@ -11,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Layout } from '@/components/layout/Layout';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from '@/components/animated-icons';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgendaBranding } from '@/hooks/useAgendaBranding';
@@ -84,7 +85,7 @@ export default function Products() {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          <Loader2 className="w-16 h-16 text-muted-foreground" />
         </div>
       </Layout>
     );
@@ -103,7 +104,7 @@ export default function Products() {
           >
             <ShoppingCart className="w-6 h-6" />
             <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-              {itemCount}
+              <AnimatedNumber value={itemCount}/>
             </span>
           </button>
         )}
@@ -150,9 +151,9 @@ export default function Products() {
                   <h3 className="font-medium text-sm sm:text-base line-clamp-1">{product.name}</h3>
                   {product.description && <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>}
                   <div className="flex items-center justify-between gap-1">
-                    <span className="text-base sm:text-lg font-bold text-primary">{formatCurrency(product.price)}</span>
+                    <span className="text-base sm:text-lg font-bold text-primary"><AnimatedNumber value={product.price??0} currency decimals={2}/></span>
                     {product.stock_quantity > 0 && product.stock_quantity <= 5 && (
-                      <span className="text-[10px] text-amber-600 whitespace-nowrap">{product.stock_quantity} un</span>
+                      <span className="text-[10px] text-amber-600 whitespace-nowrap"><AnimatedNumber value={product.stock_quantity}/> un</span>
                     )}
                   </div>
                   {user || isAgendaDemo ? (

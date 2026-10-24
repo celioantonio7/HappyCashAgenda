@@ -1,7 +1,8 @@
+import { RingLoader as Loader2 } from '@/components/app/RingLoader';
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { Lock, Loader2, XCircle } from "@/components/animated-icons";
+import { Lock, XCircle } from "@/components/animated-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -136,7 +137,7 @@ export default function ResetPassword() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-6 h-6 mr-2" />
                     Aguarde...
                   </>
                 ) : (

@@ -1,3 +1,4 @@
+import { AnimatedNumber } from '@/components/app/AnimatedNumber';
 import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -122,7 +123,7 @@ export function ProductSalesTab({ products }: ProductSalesTabProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Produtos</p>
-                <p className="text-3xl font-bold">{totalProducts}</p>
+                <p className="text-3xl font-bold"><AnimatedNumber value={totalProducts}/></p>
               </div>
               <div className="p-3 rounded-full bg-primary/10">
                 <Package className="w-6 h-6 text-primary" />
@@ -135,7 +136,7 @@ export function ProductSalesTab({ products }: ProductSalesTabProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Em Estoque</p>
-                <p className="text-3xl font-bold">{totalStock}</p>
+                <p className="text-3xl font-bold"><AnimatedNumber value={totalStock}/></p>
                 <p className="text-xs text-muted-foreground">unidades total</p>
               </div>
               <div className="p-3 rounded-full bg-primary/10">
@@ -149,8 +150,8 @@ export function ProductSalesTab({ products }: ProductSalesTabProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Pedidos</p>
-                <p className="text-3xl font-bold">{orders.length}</p>
-                <p className="text-xs text-muted-foreground">{pendingPixOrders.length} Pix pendentes</p>
+                <p className="text-3xl font-bold"><AnimatedNumber value={orders.length}/></p>
+                <p className="text-xs text-muted-foreground"><AnimatedNumber value={pendingPixOrders.length}/> Pix pendentes</p>
               </div>
               <div className="p-3 rounded-full bg-primary/10">
                 <CalendarClock className="w-6 h-6 text-primary" />
@@ -163,8 +164,8 @@ export function ProductSalesTab({ products }: ProductSalesTabProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Estoque Baixo</p>
-                <p className="text-3xl font-bold text-amber-500">{lowStock.length}</p>
-                <p className="text-xs text-muted-foreground">{outOfStock.length} esgotados</p>
+                <p className="text-3xl font-bold text-amber-500"><AnimatedNumber value={lowStock.length}/></p>
+                <p className="text-xs text-muted-foreground"><AnimatedNumber value={outOfStock.length}/> esgotados</p>
               </div>
               <div className="p-3 rounded-full bg-amber-500/10">
                 <TrendingUp className="w-6 h-6 text-amber-500" />
@@ -201,15 +202,15 @@ export function ProductSalesTab({ products }: ProductSalesTabProps) {
                     <div className="mt-3 space-y-1 text-sm">
                       {(order.agenda_product_order_items || []).map((item) => (
                         <div key={item.id} className="flex justify-between gap-3">
-                          <span>{item.quantity}x {item.product_name}</span>
-                          <span className="font-medium">R$ {Number(item.line_total).toFixed(2)}</span>
+                          <span><AnimatedNumber value={item.quantity}/>x {item.product_name}</span>
+                          <span className="font-medium">R$ <AnimatedNumber value={Number(item.line_total)} decimals={2}/></span>
                         </div>
                       ))}
                     </div>
                   </div>
                   <div className="text-left sm:text-right">
                     <p className="text-xs text-muted-foreground">Total</p>
-                    <p className="text-xl font-bold text-primary">R$ {Number(order.total_amount).toFixed(2)}</p>
+                    <p className="text-xl font-bold text-primary">R$ <AnimatedNumber value={Number(order.total_amount)} decimals={2}/></p>
                   </div>
                 </div>
               </CardContent>
@@ -238,11 +239,11 @@ export function ProductSalesTab({ products }: ProductSalesTabProps) {
                     <span className="font-medium truncate">{product.name}</span>
                     {product.category && <Badge variant="secondary" className="text-[10px]">{product.category}</Badge>}
                   </div>
-                  <div className="text-sm text-muted-foreground">R$ {product.price.toFixed(2)}</div>
+                  <div className="text-sm text-muted-foreground">R$ <AnimatedNumber value={product.price} decimals={2}/></div>
                 </div>
                 <div className="text-right shrink-0">
                   <Badge variant={product.stock_quantity <= 0 ? 'destructive' : product.stock_quantity <= 5 ? 'secondary' : 'default'}>
-                    {product.stock_quantity <= 0 ? 'Esgotado' : `${product.stock_quantity} un`}
+                    {product.stock_quantity <= 0 ? 'Esgotado' : <><AnimatedNumber value={product.stock_quantity}/> un</>}
                   </Badge>
                 </div>
               </div>

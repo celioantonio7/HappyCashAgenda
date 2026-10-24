@@ -1,0 +1,19 @@
+/* Uiverse.io by Nawsome. Shared six-ring animation, approved preview colors. */
+.hc-ring-loader { display:inline-block; flex-shrink:0; vertical-align:middle; }
+.hc-ring-loader circle { transform-box:fill-box; transform-origin:50% 50%; animation:hc-ring-loading 4s ease-in-out infinite; }
+@keyframes hc-ring-loading {
+  from { stroke-dashoffset:var(--ring-full); transform:rotate(-.25turn); animation-timing-function:ease-in; }
+  23% { stroke-dashoffset:var(--ring-quarter); transform:rotate(1turn); animation-timing-function:ease-out; }
+  46%,50% { stroke-dashoffset:var(--ring-full); transform:rotate(2.25turn); animation-timing-function:ease-in; }
+  73% { stroke-dashoffset:var(--ring-quarter); transform:rotate(3.5turn); animation-timing-function:ease-out; }
+  96%,to { stroke-dashoffset:var(--ring-full); transform:rotate(4.75turn); }
+}
+.app-loading-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:32px 16px; color:#a1aba3; font-size:13px; text-align:center; }
+.app-loading-screen { min-height:80svh; }
+.app-loading-state .loading-large { width:128px; height:128px; }
+.app-loading-state .loading-panel { width:64px; height:64px; }
+button svg.hc-ring-loader { width:24px; height:24px; }
+button.bg-primary .hc-ring-loader circle { stroke:#183009; }
+@media(prefers-reduced-motion:reduce) {
+  .hc-ring-loader circle { animation:none; stroke-dashoffset:var(--ring-quarter); transform:rotate(-.25turn); }
+}

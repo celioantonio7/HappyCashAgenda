@@ -1,3 +1,4 @@
+import { LoadingState } from '@/components/app/RingLoader';
 import { useVisibleRefresh } from '@/hooks/useVisibleRefresh';
 import { CollectionPhoto } from '@/components/app/CollectionPhoto';
 import { ListMore } from '@/components/app/ListMore';
@@ -223,9 +224,7 @@ export function ClientsTab() {
 
   if (loading)
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        Carregando...
-      </div>
+      <LoadingState label="Carregando clientes…"/>
     );
 
   return (

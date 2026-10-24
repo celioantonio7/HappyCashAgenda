@@ -1,3 +1,5 @@
+import { AnimatedNumber } from '@/components/app/AnimatedNumber';
+import { LoadingState } from '@/components/app/RingLoader';
 /**
  * Aba de Fidelidade do Painel Admin
  * - CRUD de programas de fidelidade (metas)
@@ -316,7 +318,7 @@ export function LoyaltyTab({ isAdmin, clientName }: LoyaltyTabProps) {
     ? programs.filter(p => progress.some(pr => pr.program_id === p.id && pr.client_name.toLowerCase().trim() === clientName.toLowerCase().trim()))
     : programs;
 
-  if (loading) return <div className="text-center py-8 text-muted-foreground">Carregando...</div>;
+  if (loading) return <LoadingState label="Carregando fidelidade…"/>;
 
   return (
     <div className="space-y-6">
@@ -367,7 +369,7 @@ export function LoyaltyTab({ isAdmin, clientName }: LoyaltyTabProps) {
                     <p className="text-sm text-muted-foreground">{program.description}</p>
                   )}
                   <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    <span>🎯 Meta: {program.goal_count} {program.service?.name || 'serviços'}</span>
+                    <span>🎯 Meta: <AnimatedNumber value={program.goal_count}/> {program.service?.name || 'serviços'}</span>
                     <span>🎁 {program.reward_description}</span>
                   </div>
                 </div>
@@ -403,7 +405,7 @@ export function LoyaltyTab({ isAdmin, clientName }: LoyaltyTabProps) {
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                               <span className="text-sm font-bold">
-                                {client.current_count}/{program.goal_count}
+                                <AnimatedNumber value={client.current_count}/>/<AnimatedNumber value={program.goal_count}/>
                               </span>
                               {client.completed && !client.reward_claimed && (
                                 <Gift className="w-4 h-4 text-primary animate-pulse" />

@@ -1,3 +1,5 @@
+import { AnimatedNumber } from '@/components/app/AnimatedNumber';
+import { RingLoader as Loader2 } from '@/components/app/RingLoader';
 import { isAgendaDemo } from "@/lib/agendaDemo";
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -6,7 +8,6 @@ import { ptBR } from 'date-fns/locale';
 import {
   CheckCircle2,
   Copy,
-  Loader2,
   MessageCircle,
   Minus,
   Plus,
@@ -242,7 +243,7 @@ export function CartDrawer() {
           <SheetHeader className="px-6 pt-6 pb-4 border-b border-border">
             <SheetTitle className="font-serif flex items-center gap-2">
               <ShoppingBag className="w-5 h-5" />
-              Carrinho ({items.length})
+              Carrinho (<AnimatedNumber value={items.length}/>)
             </SheetTitle>
           </SheetHeader>
 
@@ -269,12 +270,12 @@ export function CartDrawer() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm truncate">{item.name}</h4>
-                        <p className="text-primary font-bold text-sm">R$ {item.price.toFixed(2)}</p>
+                        <p className="text-primary font-bold text-sm">R$ <AnimatedNumber value={item.price} decimals={2}/></p>
                         <div className="flex items-center gap-2 mt-1.5">
                           <Button variant="outline" size="icon" className="h-7 w-7 rounded-full" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
                             <Minus className="w-3 h-3" />
                           </Button>
-                          <span className="text-sm font-medium w-6 text-center">{item.quantity}</span>
+                          <span className="text-sm font-medium w-6 text-center"><AnimatedNumber value={item.quantity}/></span>
                           <Button variant="outline" size="icon" className="h-7 w-7 rounded-full" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
                             <Plus className="w-3 h-3" />
                           </Button>
@@ -312,7 +313,7 @@ export function CartDrawer() {
               <div className="border-t border-border px-6 py-4 space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Total</span>
-                  <span className="text-2xl font-bold font-serif">R$ {total.toFixed(2)}</span>
+                  <span className="text-2xl font-bold font-serif">R$ <AnimatedNumber value={total} decimals={2}/></span>
                 </div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <Button
@@ -322,7 +323,7 @@ export function CartDrawer() {
                     disabled={isSubmitting}
                     onClick={() => void createOrder('local')}
                   >
-                    {submittingMethod === 'local' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}
+                    {submittingMethod === 'local' ? <Loader2 className="h-6 w-6" /> : <ShoppingBag className="h-4 w-4" />}
                     Pagar no local
                   </Button>
                   <Button
@@ -331,7 +332,7 @@ export function CartDrawer() {
                     disabled={isSubmitting}
                     onClick={handlePixCheckout}
                   >
-                    {submittingMethod === 'pix' ? <Loader2 className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
+                    {submittingMethod === 'pix' ? <Loader2 className="h-6 w-6" /> : <QrCode className="h-4 w-4" />}
                     Pagar Pix
                   </Button>
                 </div>
@@ -387,7 +388,7 @@ export function CartDrawer() {
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <span className="text-muted-foreground">Total</span>
-                  <span className="font-bold text-primary">R$ {confirmation.total.toFixed(2)}</span>
+                  <span className="font-bold text-primary">R$ <AnimatedNumber value={confirmation.total} decimals={2}/></span>
                 </div>
               </div>
 
@@ -396,8 +397,8 @@ export function CartDrawer() {
                 <div className="space-y-2">
                   {confirmation.items.map((item) => (
                     <div key={item.id} className="flex justify-between gap-3 text-sm">
-                      <span>{item.quantity}x {item.name}</span>
-                      <span className="font-medium">R$ {(item.price * item.quantity).toFixed(2)}</span>
+                      <span><AnimatedNumber value={item.quantity}/>x {item.name}</span>
+                      <span className="font-medium">R$ <AnimatedNumber value={(item.price * item.quantity)} decimals={2}/></span>
                     </div>
                   ))}
                 </div>

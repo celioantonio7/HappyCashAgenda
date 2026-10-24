@@ -1,10 +1,12 @@
+import { RingLoader as Loader2 } from '@/components/app/RingLoader';
+import { AnimatedNumber } from '@/components/app/AnimatedNumber';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { ListMore } from '@/components/app/ListMore';
 import { saveAgendaBookingDraft } from '@/lib/agendaBookingDraft';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, User, Scissors, X, Loader2, Trophy, CalendarSync, CheckCircle, XCircle, ChevronRight, Plus } from '@/components/animated-icons';
+import { Calendar, Clock, User, Scissors, X, Trophy, CalendarSync, CheckCircle, XCircle, ChevronRight, Plus } from '@/components/animated-icons';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -657,7 +659,7 @@ export default function MyAppointments() {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          <Loader2 className="w-16 h-16 text-muted-foreground" />
         </div>
       </Layout>
     );
@@ -668,7 +670,7 @@ export default function MyAppointments() {
       <div className="history-page client-agenda container px-4 py-5">
         <header className="client-agenda-heading"><h1>Meus <span className="text-primary">agendamentos</span></h1><p>Acompanhe seus próximos horários e histórico.</p><Button className="w-full" onClick={()=>navigate(publicBookingPath)}><Plus className="h-4 w-4 mr-2"/>Novo Agendamento</Button></header>
         <div className="metric-actions client-agenda-metrics" aria-label="Filtrar meus agendamentos">
-          {([{value:'upcoming',label:'Próximos',count:upcomingAppointments.length,icon:Calendar},{value:'completed',label:'Concluídos',count:appointments.filter(a=>a.status==='completed').length,icon:CheckCircle},{value:'cancelled',label:'Cancelados',count:appointments.filter(a=>a.status==='cancelled').length,icon:XCircle}] as const).map(metric=><button key={metric.value} className={`metric-action metric-${metric.value}`} aria-pressed={metric.value==='upcoming'?clientSection==='upcoming':clientSection==='history'&&historyFilter===metric.value} onClick={()=>{if(metric.value==='upcoming')setClientSection('upcoming');else{setClientSection('history');setHistoryFilter(metric.value);setHistoryLimit(10);}}}><span className="metric-icon"><metric.icon aria-hidden="true" className="h-4 w-4"/></span><span><small>{metric.label}</small><strong>{metric.count}</strong></span></button>)}
+          {([{value:'upcoming',label:'Próximos',count:upcomingAppointments.length,icon:Calendar},{value:'completed',label:'Concluídos',count:appointments.filter(a=>a.status==='completed').length,icon:CheckCircle},{value:'cancelled',label:'Cancelados',count:appointments.filter(a=>a.status==='cancelled').length,icon:XCircle}] as const).map(metric=><button key={metric.value} className={`metric-action metric-${metric.value}`} aria-pressed={metric.value==='upcoming'?clientSection==='upcoming':clientSection==='history'&&historyFilter===metric.value} onClick={()=>{if(metric.value==='upcoming')setClientSection('upcoming');else{setClientSection('history');setHistoryFilter(metric.value);setHistoryLimit(10);}}}><span className="metric-icon"><metric.icon aria-hidden="true" className="h-4 w-4"/></span><span><small>{metric.label}</small><strong><AnimatedNumber value={metric.count}/></strong></span></button>)}
         </div>
         <Button variant="outline" className="client-loyalty-button" aria-pressed={clientSection==='loyalty'} onClick={()=>setClientSection(current=>current==='loyalty'?'upcoming':'loyalty')}>{clientSection==='loyalty'?'Voltar aos agendamentos':'Fidelidade'}</Button>
         <section className="client-agenda-panel" aria-label={clientSection==='upcoming'?'Próximos agendamentos':clientSection==='history'?'Histórico de agendamentos':'Fidelidade'}>
@@ -677,7 +679,7 @@ export default function MyAppointments() {
             <div className="client-appointment-list">
               {(clientSection==='upcoming'?upcomingAppointments.slice(0,upcomingLimit):filteredHistory.slice(0,historyLimit)).map(apt=><button className="client-appointment-row" key={apt.id} aria-label={`Detalhes de ${apt.service?.name}, ${format(parseLocalDate(apt.appointment_date),'dd/MM')} às ${apt.appointment_time.slice(0,5)}`} onClick={()=>setViewAppointment(apt)}>
                 <time className="client-date-tile"><span>{format(parseLocalDate(apt.appointment_date),'dd/MM')}</span><strong>{apt.appointment_time.slice(0,5)}</strong><small>{format(parseLocalDate(apt.appointment_date),'EEE',{locale:ptBR})}</small></time>
-                <span className="client-appointment-content"><strong>{apt.service?.name}</strong><span className="client-barber-line">{apt.barber?.photo_url?<img src={apt.barber.photo_url} alt=""/>:<User className="h-3 w-3"/>}<span>{apt.barber?.name}</span></span><small className="client-appointment-meta"><Clock className="h-3 w-3"/>{getTotalDuration(apt)} min<span className="meta-divider"/>{formatCurrency(getTotalPrice(apt))}</small></span>
+                <span className="client-appointment-content"><strong>{apt.service?.name}</strong><span className="client-barber-line">{apt.barber?.photo_url?<img src={apt.barber.photo_url} alt=""/>:<User className="h-3 w-3"/>}<span>{apt.barber?.name}</span></span><small className="client-appointment-meta"><Clock className="h-3 w-3"/><AnimatedNumber value={getTotalDuration(apt)}/> min<span className="meta-divider"/><AnimatedNumber value={getTotalPrice(apt)??0} currency decimals={2}/></small></span>
                 <span className="client-appointment-trailing"><span className={`status-pill status-${apt.status}`}>{apt.status==='scheduled'?'Agendado':apt.status==='completed'?'Concluído':'Cancelado'}</span><span className="row-arrow"><ChevronRight className="h-4 w-4" aria-hidden="true"/></span></span>
               </button>)}
             </div>
@@ -687,7 +689,7 @@ export default function MyAppointments() {
           </>}
         </section>
       </div>
-      <Dialog open={!!viewAppointment} onOpenChange={open=>{if(!open)setViewAppointment(null);}}><DialogContent><DialogHeader><DialogTitle>Detalhes do agendamento</DialogTitle><DialogDescription>Confira seu atendimento e gerencie o horário.</DialogDescription></DialogHeader>{viewAppointment&&<div className="space-y-4"><StatusBadge status={viewAppointment.status}/><p className="font-medium">{format(parseLocalDate(viewAppointment.appointment_date),"dd 'de' MMMM",{locale:ptBR})} · {viewAppointment.appointment_time.slice(0,5)}</p><p className="text-sm text-muted-foreground">{viewAppointment.barber?.name}</p><div className="space-y-2 text-sm"><p>{viewAppointment.service?.name} · {formatCurrency(viewAppointment.service?.price)}</p>{viewAppointment.extraServices.map(extra=><p key={extra.id}>+ {extra.name} · {extra.duration_minutes} min · {formatCurrency(extra.price)}</p>)}<p className="font-semibold border-t border-border pt-3">{getTotalDuration(viewAppointment)} min · {formatCurrency(getTotalPrice(viewAppointment))}</p></div><div className="form-actions flex-wrap">{canRescheduleAppointment(viewAppointment)&&<Button variant="outline" onClick={()=>{setViewAppointment(null);openRescheduleDialog(viewAppointment);}}><CalendarSync className="h-4 w-4 mr-1"/>Remarcar</Button>}{canCancelAppointment(viewAppointment)&&<Button variant="outline" className="text-destructive" onClick={()=>{setViewAppointment(null);openCancelDialog(viewAppointment);}}><X className="h-4 w-4 mr-1"/>Cancelar</Button>}{!upcomingAppointments.some(a=>a.id===viewAppointment.id)&&<Button onClick={()=>bookAgain(viewAppointment)}>Agendar novamente</Button>}</div></div>}</DialogContent></Dialog>
+      <Dialog open={!!viewAppointment} onOpenChange={open=>{if(!open)setViewAppointment(null);}}><DialogContent><DialogHeader><DialogTitle>Detalhes do agendamento</DialogTitle><DialogDescription>Confira seu atendimento e gerencie o horário.</DialogDescription></DialogHeader>{viewAppointment&&<div className="space-y-4"><StatusBadge status={viewAppointment.status}/><p className="font-medium">{format(parseLocalDate(viewAppointment.appointment_date),"dd 'de' MMMM",{locale:ptBR})} · {viewAppointment.appointment_time.slice(0,5)}</p><p className="text-sm text-muted-foreground">{viewAppointment.barber?.name}</p><div className="space-y-2 text-sm"><p>{viewAppointment.service?.name} · <AnimatedNumber value={viewAppointment.service?.price??0} currency decimals={2}/></p>{viewAppointment.extraServices.map(extra=><p key={extra.id}>+ {extra.name} · <AnimatedNumber value={extra.duration_minutes}/> min · <AnimatedNumber value={extra.price??0} currency decimals={2}/></p>)}<p className="font-semibold border-t border-border pt-3"><AnimatedNumber value={getTotalDuration(viewAppointment)}/> min · <AnimatedNumber value={getTotalPrice(viewAppointment)??0} currency decimals={2}/></p></div><div className="form-actions flex-wrap">{canRescheduleAppointment(viewAppointment)&&<Button variant="outline" onClick={()=>{setViewAppointment(null);openRescheduleDialog(viewAppointment);}}><CalendarSync className="h-4 w-4 mr-1"/>Remarcar</Button>}{canCancelAppointment(viewAppointment)&&<Button variant="outline" className="text-destructive" onClick={()=>{setViewAppointment(null);openCancelDialog(viewAppointment);}}><X className="h-4 w-4 mr-1"/>Cancelar</Button>}{!upcomingAppointments.some(a=>a.id===viewAppointment.id)&&<Button onClick={()=>bookAgain(viewAppointment)}>Agendar novamente</Button>}</div></div>}</DialogContent></Dialog>
 
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
@@ -705,7 +707,7 @@ export default function MyAppointments() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {cancellingId ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-6 h-6" />
               ) : (
                 'Cancelar Agendamento'
               )}
@@ -721,7 +723,7 @@ export default function MyAppointments() {
               <DialogTitle>Remarcar agendamento</DialogTitle>
               <DialogDescription>
                 O mesmo {settings.professionalLabel.toLowerCase()} e os mesmos serviços serão mantidos.
-                Remarcações ficam disponíveis até {rescheduleNoticeHours} hora(s) antes do atendimento.
+                Remarcações ficam disponíveis até <AnimatedNumber value={rescheduleNoticeHours}/> hora(s) antes do atendimento.
               </DialogDescription>
             </DialogHeader>
 
@@ -759,7 +761,7 @@ export default function MyAppointments() {
                       </p>
                     ) : rescheduleLoadingSlots ? (
                       <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        <Loader2 className="h-6 w-6 text-muted-foreground" />
                       </div>
                     ) : rescheduleAllSlots.length === 0 ? (
                       <p className="py-8 text-center text-sm text-muted-foreground">
@@ -831,7 +833,7 @@ export default function MyAppointments() {
                   >
                     {reschedulingId === rescheduleAppointment.id ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-2 h-6 w-6" />
                         Salvando...
                       </>
                     ) : (

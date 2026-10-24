@@ -1,3 +1,4 @@
+import { LoadingState } from '@/components/app/RingLoader';
 import { lazy, Suspense } from "react";
 import { PwaStatus } from "@/components/app/PwaStatus";
 import { Toaster } from "@/components/ui/toaster";
@@ -38,7 +39,7 @@ const App = () => (
                 <Sonner />
                 <CartDrawer />
                 <Seo />
-                <Suspense fallback={<main className="min-h-[60svh] grid place-items-center text-sm text-muted-foreground" aria-busy="true">Abrindo sua agenda…</main>}>
+                <Suspense fallback={<LoadingState fullScreen label="Abrindo sua agenda…"/>}>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />

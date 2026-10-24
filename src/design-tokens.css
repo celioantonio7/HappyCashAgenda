@@ -496,3 +496,6 @@ body:has(.app-frame) { overflow:hidden; }
 .feed-post-detail > p:last-child { font-size:14px; line-height:1.7; color:#a1aba3; }
 @media(min-width:768px) { .fan-feed .fan-stage { margin-inline:0; } .fan-controls,.fan-post-summary { width:min(100%,560px); margin-inline:auto; } }
 @media(max-height:700px) { .feed-preview-notice { padding:6px 10px; margin-top:8px; } .fan-feed .fan-stage { min-height:160px; } .fan-feed .fan-card { top:10px; height:calc(100% - 40px); min-height:130px; } .fan-post-summary { max-height:80px; } }
+
+.animated-number { display:inline-block; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.animated-number number-flow-react { vertical-align:baseline; --number-flow-mask-height:.12em; --number-flow-mask-width:0em; }

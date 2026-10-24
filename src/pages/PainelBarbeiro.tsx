@@ -1,3 +1,5 @@
+import { RingLoader as Loader2 } from '@/components/app/RingLoader';
+import { AnimatedNumber } from '@/components/app/AnimatedNumber';
 import { Gauge } from '@/components/bklit/gauge/gauge';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { ListMore } from '@/components/app/ListMore';
@@ -25,7 +27,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Calendar, Clock, TrendingUp, Loader2, DollarSign,
+  Calendar, Clock, TrendingUp, DollarSign,
   CheckCircle, XCircle, AlertCircle, Scissors, Plus, UserPlus, Bell,
   Wifi, WifiOff, Info, Trophy
 } from '@/components/animated-icons';
@@ -832,7 +834,7 @@ export default function BarberDashboard() {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          <Loader2 className="w-16 h-16 text-muted-foreground" />
         </div>
       </Layout>
     );
@@ -904,7 +906,7 @@ export default function BarberDashboard() {
           </div>
 
           <div className="staff-kpis metric-actions" aria-label="Filtrar agendamentos">
-            {([{value:'scheduled',label:'Pendentes',count:scheduledAppointments.length,icon:AlertCircle},{value:'completed',label:'Concluídos',count:completedAppointments.length,icon:CheckCircle},{value:'cancelled',label:'Cancelados',count:cancelledAppointments.length,icon:XCircle}] as const).map(metric=><button key={metric.value} className={`metric-action metric-${metric.value}`} aria-pressed={dashboardSection==='agenda'&&appointmentTab===metric.value} onClick={()=>{setAppointmentTab(metric.value);setDashboardSection('agenda');setDayFilter('all');setListLimit(10);}}><span className="metric-icon"><metric.icon className="h-4 w-4" aria-hidden="true"/></span><span><small>{metric.label}</small><strong>{metric.count}</strong></span></button>)}
+            {([{value:'scheduled',label:'Pendentes',count:scheduledAppointments.length,icon:AlertCircle},{value:'completed',label:'Concluídos',count:completedAppointments.length,icon:CheckCircle},{value:'cancelled',label:'Cancelados',count:cancelledAppointments.length,icon:XCircle}] as const).map(metric=><button key={metric.value} className={`metric-action metric-${metric.value}`} aria-pressed={dashboardSection==='agenda'&&appointmentTab===metric.value} onClick={()=>{setAppointmentTab(metric.value);setDashboardSection('agenda');setDayFilter('all');setListLimit(10);}}><span className="metric-icon"><metric.icon className="h-4 w-4" aria-hidden="true"/></span><span><small>{metric.label}</small><strong><AnimatedNumber value={metric.count}/></strong></span></button>)}
           </div>
           <div className="segmented-nav staff-section-nav" aria-label="Seção do painel"><Button variant="ghost" aria-pressed={dashboardSection==='agenda'} onClick={()=>setDashboardSection('agenda')}>Agenda</Button><Button variant="ghost" aria-pressed={dashboardSection==='performance'} onClick={()=>setDashboardSection('performance')}>Desempenho</Button><Button variant="ghost" aria-pressed={dashboardSection==='goals'} onClick={()=>setDashboardSection('goals')}><Trophy className="h-4 w-4 mr-1"/>Metas</Button></div>
           {dashboardSection==='performance' && <section aria-label="Meu desempenho">
@@ -950,7 +952,7 @@ export default function BarberDashboard() {
                     <p className="text-center text-muted-foreground py-8">Nenhum agendamento pendente.</p>
                   ) : (
                     <div className="space-y-2">
-                      {visibleScheduled.slice(0,listLimit).map(apt=><button key={apt.id} className="staff-appointment-row" aria-label={`Detalhes de ${apt.client_name}, ${apt.appointment_time.slice(0,5)}`} onClick={()=>{setDetailsAppointment(apt);setShowDetailsDialog(true);}}><time className="appointment-time">{format(parseLocalDate(apt.appointment_date),'dd/MM')}<strong className="block mt-1">{apt.appointment_time.slice(0,5)}</strong></time><span className="min-w-0 flex-1"><strong className="block truncate font-medium">{apt.client_name}</strong><small className="block truncate text-muted-foreground">{apt.service?.name}</small><small className="block text-muted-foreground mt-1">{getTotalDuration(apt)} min · {formatCurrency(getTotalPrice(apt))}</small></span><span className="text-right"><span className="status-pill status-scheduled">Pendente</span><small className="block text-primary mt-2">Detalhes ›</small></span></button>)}
+                      {visibleScheduled.slice(0,listLimit).map(apt=><button key={apt.id} className="staff-appointment-row" aria-label={`Detalhes de ${apt.client_name}, ${apt.appointment_time.slice(0,5)}`} onClick={()=>{setDetailsAppointment(apt);setShowDetailsDialog(true);}}><time className="appointment-time">{format(parseLocalDate(apt.appointment_date),'dd/MM')}<strong className="block mt-1">{apt.appointment_time.slice(0,5)}</strong></time><span className="min-w-0 flex-1"><strong className="block truncate font-medium">{apt.client_name}</strong><small className="block truncate text-muted-foreground">{apt.service?.name}</small><small className="block text-muted-foreground mt-1"><AnimatedNumber value={getTotalDuration(apt)}/> min · <AnimatedNumber value={getTotalPrice(apt)??0} currency decimals={2}/></small></span><span className="text-right"><span className="status-pill status-scheduled">Pendente</span><small className="block text-primary mt-2">Detalhes ›</small></span></button>)}
                     </div>
                   )}
                 </CardContent>
@@ -968,7 +970,7 @@ export default function BarberDashboard() {
                     <p className="text-center text-muted-foreground py-8">Nenhum serviço concluído neste mês.</p>
                   ) : (
                     <div className="space-y-3">
-                      {completedAppointments.slice(0,listLimit).map(apt=><button key={apt.id} className="staff-appointment-row" aria-label={`Detalhes de ${apt.client_name}`} onClick={()=>{setDetailsAppointment(apt);setShowDetailsDialog(true);}}><time className="appointment-time">{format(parseLocalDate(apt.appointment_date),'dd/MM')}<strong className="block mt-1">{apt.appointment_time.slice(0,5)}</strong></time><span className="min-w-0 flex-1"><strong className="block truncate font-medium">{apt.client_name}</strong><small className="block truncate text-muted-foreground">{apt.service?.name}</small><small className="block text-muted-foreground">{getTotalDuration(apt)} min · {formatCurrency(getTotalPrice(apt))}</small></span><span className="text-right"><span className="status-pill status-completed">Concluído</span><small className="block text-primary mt-2">Detalhes ›</small></span></button>)}
+                      {completedAppointments.slice(0,listLimit).map(apt=><button key={apt.id} className="staff-appointment-row" aria-label={`Detalhes de ${apt.client_name}`} onClick={()=>{setDetailsAppointment(apt);setShowDetailsDialog(true);}}><time className="appointment-time">{format(parseLocalDate(apt.appointment_date),'dd/MM')}<strong className="block mt-1">{apt.appointment_time.slice(0,5)}</strong></time><span className="min-w-0 flex-1"><strong className="block truncate font-medium">{apt.client_name}</strong><small className="block truncate text-muted-foreground">{apt.service?.name}</small><small className="block text-muted-foreground"><AnimatedNumber value={getTotalDuration(apt)}/> min · <AnimatedNumber value={getTotalPrice(apt)??0} currency decimals={2}/></small></span><span className="text-right"><span className="status-pill status-completed">Concluído</span><small className="block text-primary mt-2">Detalhes ›</small></span></button>)}
                     </div>
                   )}
                 </CardContent>
@@ -986,7 +988,7 @@ export default function BarberDashboard() {
                     <p className="text-center text-muted-foreground py-8">Nenhum cancelamento neste mês.</p>
                   ) : (
                     <div className="space-y-3">
-                      {cancelledAppointments.slice(0,listLimit).map(apt=><button key={apt.id} className="staff-appointment-row" aria-label={`Detalhes de ${apt.client_name}`} onClick={()=>{setDetailsAppointment(apt);setShowDetailsDialog(true);}}><time className="appointment-time">{format(parseLocalDate(apt.appointment_date),'dd/MM')}<strong className="block mt-1">{apt.appointment_time.slice(0,5)}</strong></time><span className="min-w-0 flex-1"><strong className="block truncate font-medium">{apt.client_name}</strong><small className="block truncate text-muted-foreground">{apt.service?.name}</small><small className="block text-muted-foreground">{getTotalDuration(apt)} min · {formatCurrency(getTotalPrice(apt))}</small></span><span className="text-right"><span className="status-pill status-cancelled">Cancelado</span><small className="block text-primary mt-2">Detalhes ›</small></span></button>)}
+                      {cancelledAppointments.slice(0,listLimit).map(apt=><button key={apt.id} className="staff-appointment-row" aria-label={`Detalhes de ${apt.client_name}`} onClick={()=>{setDetailsAppointment(apt);setShowDetailsDialog(true);}}><time className="appointment-time">{format(parseLocalDate(apt.appointment_date),'dd/MM')}<strong className="block mt-1">{apt.appointment_time.slice(0,5)}</strong></time><span className="min-w-0 flex-1"><strong className="block truncate font-medium">{apt.client_name}</strong><small className="block truncate text-muted-foreground">{apt.service?.name}</small><small className="block text-muted-foreground"><AnimatedNumber value={getTotalDuration(apt)}/> min · <AnimatedNumber value={getTotalPrice(apt)??0} currency decimals={2}/></small></span><span className="text-right"><span className="status-pill status-cancelled">Cancelado</span><small className="block text-primary mt-2">Detalhes ›</small></span></button>)}
                     </div>
                   )}
                 </CardContent>
@@ -994,7 +996,7 @@ export default function BarberDashboard() {
             </TabsContent>
 
           </Tabs><ListMore total={appointmentTab==='scheduled'?visibleScheduled.length:appointmentTab==='completed'?completedAppointments.length:appointmentTab==='cancelled'?cancelledAppointments.length:0} shown={listLimit} onMore={()=>setListLimit(n=>n+10)}/></section>}
-          {dashboardSection==='goals'&&<section className="staff-goals" aria-label="Metas"><div className="goals-overview"><div><h2 className="text-lg font-semibold">Seu progresso no mês</h2><p className="text-sm text-muted-foreground mt-1">Atendimentos concluídos entre os agendamentos deste mês.</p><p className="text-sm mt-3"><strong className="text-primary">{completedAppointments.length}</strong> de {monthlyAppointments.length} atendimentos</p></div><div className="completion-gauge" role="img" aria-label={`${completedAppointments.length} de ${monthlyAppointments.length} atendimentos concluídos`}><Gauge value={monthlyAppointments.length?completedAppointments.length/monthlyAppointments.length*100:0} centerValue={monthlyAppointments.length?Math.round(completedAppointments.length/monthlyAppointments.length*100):0} suffix="%" defaultLabel="concluídos" minWidth={180} height={180} activeFill="#B9FF39" inactiveFill="#2A332D" inactiveFillOpacity={.7} totalNotches={40} spacing={25}/></div></div><div className="mt-5"><h2 className="font-semibold text-lg mb-3">Metas de fidelidade</h2><LoyaltyTab isAdmin={false}/></div></section>}
+          {dashboardSection==='goals'&&<section className="staff-goals" aria-label="Metas"><div className="goals-overview"><div><h2 className="text-lg font-semibold">Seu progresso no mês</h2><p className="text-sm text-muted-foreground mt-1">Atendimentos concluídos entre os agendamentos deste mês.</p><p className="text-sm mt-3"><strong className="text-primary"><AnimatedNumber value={completedAppointments.length}/></strong> de <AnimatedNumber value={monthlyAppointments.length}/> atendimentos</p></div><div className="completion-gauge" role="img" aria-label={`${completedAppointments.length} de ${monthlyAppointments.length} atendimentos concluídos`}><Gauge value={monthlyAppointments.length?completedAppointments.length/monthlyAppointments.length*100:0} centerValue={monthlyAppointments.length?Math.round(completedAppointments.length/monthlyAppointments.length*100):0} suffix="%" defaultLabel="concluídos" minWidth={180} height={180} activeFill="#B9FF39" inactiveFill="#2A332D" inactiveFillOpacity={.7} totalNotches={40} spacing={25}/></div></div><div className="mt-5"><h2 className="font-semibold text-lg mb-3">Metas de fidelidade</h2><LoyaltyTab isAdmin={false}/></div></section>}
         </motion.div>
 
         {/* New Appointment Dialog */}
@@ -1076,7 +1078,7 @@ export default function BarberDashboard() {
                 Cancelar
               </Button>
               <Button onClick={createAppointment} disabled={submitting}>
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                {submitting ? <Loader2 className="w-6 h-6 mr-2" /> : null}
                 Agendar
               </Button>
             </DialogFooter>
@@ -1097,15 +1099,15 @@ export default function BarberDashboard() {
               <div className="p-3 bg-muted rounded-lg space-y-1">
                 <p className="text-sm text-muted-foreground font-medium">Serviços agendados:</p>
                 <p className="text-sm">
-                  {selectedAppointment?.service?.name} - <span className="font-medium">{formatCurrency(selectedAppointment?.service?.price)}</span>
+                  {selectedAppointment?.service?.name} - <span className="font-medium"><AnimatedNumber value={selectedAppointment?.service?.price??0} currency decimals={2}/></span>
                 </p>
                 {selectedAppointment && getExtraServicesForAppointment(selectedAppointment.id).map((extra) => (
                   <p key={extra.id} className="text-sm text-primary">
-                    + {extra.name} - {formatCurrency(extra.price)}
+                    + {extra.name} - <AnimatedNumber value={extra.price??0} currency decimals={2}/>
                   </p>
                 ))}
                 <p className="text-xs text-muted-foreground pt-1 border-t mt-2">
-                  Total atual: <span className="font-semibold">R$ {selectedAppointment ? getTotalPrice(selectedAppointment).toFixed(2) : '0.00'}</span>
+                  Total atual: <span className="font-semibold"><AnimatedNumber value={selectedAppointment?getTotalPrice(selectedAppointment):0} currency decimals={2}/></span>
                 </p>
               </div>
 
@@ -1137,10 +1139,10 @@ export default function BarberDashboard() {
                 <div className="p-3 bg-primary/10 rounded-lg">
                   <p className="text-sm font-medium">Novo total:</p>
                   <p className="text-lg font-bold text-primary">
-                    R$ {(
+                    R$ <AnimatedNumber value={(
                       (selectedAppointment ? getTotalPrice(selectedAppointment) : 0) +
                       (services.find(s => s.id === additionalServiceId)?.price || 0)
-                    ).toFixed(2)}
+                    )} decimals={2}/>
                   </p>
                 </div>
               )}
@@ -1150,7 +1152,7 @@ export default function BarberDashboard() {
                 Cancelar
               </Button>
               <Button onClick={addServiceToAppointment} disabled={submitting || !additionalServiceId}>
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                {submitting ? <Loader2 className="w-6 h-6 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
                 Adicionar
               </Button>
             </DialogFooter>
@@ -1202,18 +1204,18 @@ export default function BarberDashboard() {
                         <span className="flex items-center gap-1">
                           <Scissors className="w-3 h-3 text-muted-foreground" />
                           {detailsAppointment.service?.name}
-                          <span className="text-xs text-muted-foreground">({detailsAppointment.service?.duration_minutes}min)</span>
+                          <span className="text-xs text-muted-foreground">(<AnimatedNumber value={detailsAppointment.service?.duration_minutes}/>min)</span>
                         </span>
-                        <span>{formatCurrency(detailsAppointment.service?.price)}</span>
+                        <span><AnimatedNumber value={detailsAppointment.service?.price??0} currency decimals={2}/></span>
                       </div>
                       {extras.map((extra) => (
                         <div key={extra.id} className="flex items-center justify-between text-sm text-primary">
                           <span className="flex items-center gap-1">
                             <Plus className="w-3 h-3" />
                             {extra.name}
-                            <span className="text-xs text-primary/70">({extra.duration_minutes}min)</span>
+                            <span className="text-xs text-primary/70">(<AnimatedNumber value={extra.duration_minutes}/>min)</span>
                           </span>
-                          <span>{formatCurrency(extra.price)}</span>
+                          <span><AnimatedNumber value={extra.price??0} currency decimals={2}/></span>
                         </div>
                       ))}
                     </div>
@@ -1223,12 +1225,12 @@ export default function BarberDashboard() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Duração Total</span>
                       <span className="font-medium flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {totalDuration} min
+                        <Clock className="w-3 h-3" /> <AnimatedNumber value={totalDuration}/> min
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Valor Total</span>
-                      <span className="font-bold text-lg text-primary">{formatCurrency(totalPrice)}</span>
+                      <span className="font-bold text-lg text-primary"><AnimatedNumber value={totalPrice??0} currency decimals={2}/></span>
                     </div>
                   </div>
                 </div>

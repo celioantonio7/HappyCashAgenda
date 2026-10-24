@@ -1,5 +1,7 @@
+import { AnimatedNumber } from '@/components/app/AnimatedNumber';
+import { RingLoader as Loader2 } from '@/components/app/RingLoader';
 import { useMemo } from "react";
-import { Copy, Loader2, QrCode } from "@/components/animated-icons";
+import { Copy, QrCode } from "@/components/animated-icons";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Dialog,
@@ -78,7 +80,7 @@ export function PixPaymentDialog({
               <QRCodeSVG value={copyPaste} size={220} level="M" includeMargin />
             </div>
             <p className="text-center text-lg font-bold text-primary">
-              R$ {amount.toFixed(2)}
+              R$ <AnimatedNumber value={amount} decimals={2}/>
             </p>
             <Button type="button" variant="outline" className="w-full gap-2" onClick={handleCopy}>
               <Copy className="h-4 w-4" />
@@ -95,7 +97,7 @@ export function PixPaymentDialog({
         >
           {loading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-6 w-6" />
               Registrando...
             </>
           ) : (

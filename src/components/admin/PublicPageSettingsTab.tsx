@@ -1,3 +1,4 @@
+import { LoadingState } from '@/components/app/RingLoader';
 import { type CSSProperties, useEffect, useState } from "react";
 import { Facebook, ImagePlus, Instagram, Link2, MapPin, MessageCircle, Palette, Save, Users } from "@/components/animated-icons";
 import { Button } from "@/components/ui/button";
@@ -114,7 +115,7 @@ export function PublicPageSettingsTab() {
   };
 
   if (loading) {
-    return <div className="py-10 text-center text-sm text-muted-foreground">Carregando configuracoes...</div>;
+    return <LoadingState label="Carregando configurações…"/>;
   }
 
   const publicUrl = `https://agenda.happycashsite.com.br${buildAgendaPublicHomePath(draft.slug)}`;

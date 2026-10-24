@@ -1,3 +1,5 @@
+import { AnimatedNumber } from '@/components/app/AnimatedNumber';
+import { LoadingState } from '@/components/app/RingLoader';
 import { useEffect, useState } from "react";
 import { CalendarDays, Palette, RotateCcw, Save, Sparkles } from "@/components/animated-icons";
 import { Button } from "@/components/ui/button";
@@ -131,7 +133,7 @@ export function BrandingTab() {
   };
 
   if (loading) {
-    return <div className="py-10 text-center text-sm text-muted-foreground">Carregando identidade...</div>;
+    return <LoadingState label="Carregando identidade…"/>;
   }
 
   return (
@@ -220,7 +222,7 @@ export function BrandingTab() {
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">
               <Label htmlFor="logoSize">Tamanho do logo</Label>
-              <span className="text-xs font-medium text-muted-foreground">{Math.round(draft.logoSize)}px</span>
+              <span className="text-xs font-medium text-muted-foreground"><AnimatedNumber value={Math.round(draft.logoSize)}/>px</span>
             </div>
             <Slider
               id="logoSize"

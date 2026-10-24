@@ -1,3 +1,5 @@
+import { AnimatedNumber } from '@/components/app/AnimatedNumber';
+import { RingLoader as Loader2 } from '@/components/app/RingLoader';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { useVisibleRefresh } from '@/hooks/useVisibleRefresh';
 import { CollectionPhoto } from '@/components/app/CollectionPhoto';
@@ -6,7 +8,7 @@ import { isAgendaDemo, demoServices, demoBarbers } from "@/lib/agendaDemo";
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Briefcase, Calendar, Clock, User, ArrowRight, ArrowLeft, Check, Loader2, AlertCircle, Users } from '@/components/animated-icons';
+import { Briefcase, Calendar, Clock, User, ArrowRight, ArrowLeft, Check, AlertCircle, Users } from '@/components/animated-icons';
 import { addDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { z } from 'zod';
@@ -659,7 +661,7 @@ export default function Booking() {
                     {waitingQueue.map((item) => (
                       <div key={item.id} className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm">
                         <div className="min-w-0">
-                          <p className="truncate font-medium">#{item.position} - {item.client_name}</p>
+                          <p className="truncate font-medium">#<AnimatedNumber value={item.position}/> - {item.client_name}</p>
                           <p className="truncate text-xs text-muted-foreground">
                             {item.service_name} com {item.barber_name}
                           </p>
@@ -760,8 +762,8 @@ export default function Booking() {
                           return <button key={service.id} type="button" aria-pressed={selected} onClick={()=>setSelectedServices(current=>selected?current.filter(item=>item.id!==service.id):[...current,service])} className={cn('service-option w-full border text-left transition-colors',selected?'border-primary bg-primary/5':'border-border hover:border-primary/50')}>
                             <span className={cn('service-check',selected&&'selected')} aria-hidden="true">{selected&&<Check className="h-3 w-3"/>}</span>
                             <CollectionPhoto store={settings.storeAccountId||''} kind="services" id={service.id} name={service.name} version={service.updated_at}/>
-                            <span className="service-text"><strong>{service.name}</strong>{service.description&&<small className="service-description">{service.description}</small>}<small><Clock className="h-3 w-3" aria-hidden="true"/> {service.duration_minutes} min</small></span>
-                            <span className="service-price">{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(service.price)}</span>
+                            <span className="service-text"><strong>{service.name}</strong>{service.description&&<small className="service-description">{service.description}</small>}<small><Clock className="h-3 w-3" aria-hidden="true"/> <AnimatedNumber value={service.duration_minutes}/> min</small></span>
+                            <span className="service-price"><AnimatedNumber value={service.price} currency decimals={2}/></span>
                           </button>;
                         })}
                       </div>
@@ -862,13 +864,13 @@ export default function Booking() {
                         </p>
                       ) : loading ? (
                         <div className="flex items-center justify-center py-8">
-                          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                          <Loader2 className="w-6 h-6 text-muted-foreground" />
                         </div>
                       ) : slotError ? <div role="alert" className="text-sm space-y-3"><p>Não foi possível consultar os horários.</p><Button variant="outline" onClick={()=>void fetchAvailableSlots()}>Tentar novamente</Button></div> : allSlots.length === 0 ? (
                         <div className="text-center py-6 space-y-3">
                           <AlertCircle className="w-8 h-8 text-primary mx-auto" />
                           <p className="text-sm text-muted-foreground">
-                            Nenhum horário disponível para os serviços selecionados ({totalDuration} min).
+                            Nenhum horário disponível para os serviços selecionados (<AnimatedNumber value={totalDuration}/> min).
                           </p>
                           <p className="text-sm text-primary font-medium">
                             O serviço pode ultrapassar o horário de funcionamento. Sugestão:
@@ -952,7 +954,7 @@ export default function Booking() {
                           </div>
                           {exceededSlots.length > 0 && (
                             <p className="text-xs text-muted-foreground mt-2">
-                              ⚠️ Horários em branco: o serviço de {totalDuration}min ultrapassaria o fechamento. Escolha outro dia ou serviços de menor duração.
+                              ⚠️ Horários em branco: o serviço de <AnimatedNumber value={totalDuration}/>min ultrapassaria o fechamento. Escolha outro dia ou serviços de menor duração.
                             </p>
                           )}
                         </div>
@@ -982,16 +984,16 @@ export default function Booking() {
                             <div className="flex items-center gap-2">
                               <Briefcase className="w-3 h-3 text-muted-foreground" />
                               <span className="font-medium">{s.name}</span>
-                              <span className="text-muted-foreground">({s.duration_minutes}min)</span>
+                              <span className="text-muted-foreground">(<AnimatedNumber value={s.duration_minutes}/>min)</span>
                             </div>
-                            <span className="text-muted-foreground">{formatCurrency(s.price)}</span>
+                            <span className="text-muted-foreground"><AnimatedNumber value={s.price??0} currency decimals={2}/></span>
                           </div>
                         ))}
                       </div>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Duração Total</span>
-                      <span className="font-semibold text-primary">{totalDuration} min</span>
+                      <span className="font-semibold text-primary"><AnimatedNumber value={totalDuration}/> min</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{settings.professionalLabel}</span>
@@ -1019,7 +1021,7 @@ export default function Booking() {
                     <div className="flex justify-between pt-3 border-t border-border">
                       <span className="text-muted-foreground font-medium">Valor Total</span>
                       <span className="font-bold text-lg text-primary">
-                        {formatCurrency(totalPrice)}
+                        <AnimatedNumber value={totalPrice??0} currency decimals={2}/>
                       </span>
                     </div>
                   </div>
@@ -1064,11 +1066,11 @@ export default function Booking() {
                         <div className="booking-selection" role="status" aria-live="polite">
                           <div className="flex justify-between items-center">
                             <div>
-                              <p className="font-medium">{selectedServices.length} item(ns) selecionado(s)</p>
-                              <p className="text-sm text-muted-foreground">Duração total: {totalDuration} min</p>
+                              <p className="font-medium"><AnimatedNumber value={selectedServices.length}/> item(ns) selecionado(s)</p>
+                              <p className="text-sm text-muted-foreground">Duração total: <AnimatedNumber value={totalDuration}/> min</p>
                             </div>
                             <div className="text-right">
-                              <p className="text-xl font-bold text-primary">{formatCurrency(totalPrice)}</p>
+                              <p className="text-xl font-bold text-primary"><AnimatedNumber value={totalPrice??0} currency decimals={2}/></p>
                             </div>
                           </div>
                         </div>
@@ -1085,7 +1087,7 @@ export default function Booking() {
               Voltar
             </Button>
 
-            {step==='confirm' && user && <Button onClick={()=>handleSubmit(paymentChoice)} disabled={!canProceed()||submitting}>{submitting?<Loader2 className="h-4 w-4 animate-spin"/>:'Confirmar'}<ArrowRight className="h-4 w-4 ml-2"/></Button>}
+            {step==='confirm' && user && <Button onClick={()=>handleSubmit(paymentChoice)} disabled={!canProceed()||submitting}>{submitting?<Loader2 className="h-6 w-6"/>:'Confirmar'}<ArrowRight className="h-4 w-4 ml-2"/></Button>}
             {step !== 'confirm' && (
               <Button
                 onClick={nextStep}

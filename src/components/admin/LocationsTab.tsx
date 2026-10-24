@@ -1,3 +1,4 @@
+import { LoadingState } from '@/components/app/RingLoader';
 /**
  * Aba de Localizações do Painel Admin
  * - CRUD de localizações com Google Maps embed
@@ -156,9 +157,7 @@ export function LocationsTab({ isAdmin }: LocationsTabProps) {
 
   if (loading)
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        Carregando...
-      </div>
+      <LoadingState label="Carregando localizações…"/>
     );
 
   return (

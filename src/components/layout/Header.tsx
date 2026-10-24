@@ -1,3 +1,4 @@
+import { RingLoader as Loader2 } from '@/components/app/RingLoader';
 /**
  * ==============================================================
  * COMPONENTE: Header (Cabeçalho)
@@ -27,7 +28,6 @@ import {
   LogOut,
   Key,
   Phone,
-  Loader2,
   ShoppingCart,
 } from "@/components/animated-icons";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -544,7 +544,7 @@ export function Header() {
             <Button onClick={handlePasswordChange} disabled={changingPassword}>
               {changingPassword ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-6 h-6 mr-2" />
                   Alterando...
                 </>
               ) : (
@@ -619,7 +619,7 @@ export function Header() {
               <Button onClick={sendPhoneToken} disabled={changingPhone}>
                 {changingPhone ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-6 h-6 mr-2" />
                     Enviando...
                   </>
                 ) : (
@@ -630,7 +630,7 @@ export function Header() {
               <Button onClick={confirmPhoneChange} disabled={changingPhone}>
                 {changingPhone ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-6 h-6 mr-2" />
                     Confirmando...
                   </>
                 ) : (

@@ -1,3 +1,4 @@
+import { AnimatedNumber } from '@/components/app/AnimatedNumber';
 import { ListMore } from '@/components/app/ListMore';
 import { useMemo, useState } from 'react';
 import { Briefcase, CheckCircle2, Clock, User } from '@/components/animated-icons';
@@ -70,7 +71,7 @@ export function AppointmentQueueTab({ appointments, onConfirmPayment }: Appointm
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-serif text-xl font-bold">Fila de Atendimento</h2>
-        <Badge variant="secondary" className="text-sm">{queue.length} na fila</Badge>
+        <Badge variant="secondary" className="text-sm"><AnimatedNumber value={queue.length}/> na fila</Badge>
       </div>
 
       {queue.length === 0 ? (
@@ -94,7 +95,7 @@ export function AppointmentQueueTab({ appointments, onConfirmPayment }: Appointm
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${index === 0 && isToday ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
-                        {index + 1}
+                        <AnimatedNumber value={index + 1}/>
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -124,7 +125,7 @@ export function AppointmentQueueTab({ appointments, onConfirmPayment }: Appointm
                           ? `Entrada ${apt.created_at ? format(new Date(apt.created_at), 'HH:mm') : apt.appointment_time.slice(0, 5)}`
                           : `${isToday ? 'Hoje' : format(parseLocalDate(apt.appointment_date), "dd/MM", { locale: ptBR })} às ${apt.appointment_time.slice(0, 5)}`}
                       </div>
-                      <div className="text-lg font-bold text-primary">R$ {getTotalPrice(apt).toFixed(0)}</div>
+                      <div className="text-lg font-bold text-primary">R$ <AnimatedNumber value={getTotalPrice(apt)} decimals={0}/></div>
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-3 ml-11">
@@ -135,7 +136,7 @@ export function AppointmentQueueTab({ appointments, onConfirmPayment }: Appointm
                     <span className="text-muted-foreground">•</span>
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Clock className="w-3.5 h-3.5" />
-                      {getTotalDuration(apt)} min
+                      <AnimatedNumber value={getTotalDuration(apt)}/> min
                     </div>
                   </div>
                 </CardContent>
