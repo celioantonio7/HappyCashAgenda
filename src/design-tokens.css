@@ -600,3 +600,27 @@ body:has(.app-frame) { overflow:hidden; }
 .agenda-dialog,.agenda-dialog * { scrollbar-width:none; }
 .agenda-dialog::-webkit-scrollbar,.agenda-dialog *::-webkit-scrollbar { display:none; }
 .app-scroll-hint { flex-shrink:0; }
+
+/* Keep touch scrolling while suppressing pinch and double-tap page zoom. */
+html { touch-action:pan-x pan-y; }
+@media (pointer:coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea, select, [contenteditable="true"], [role="combobox"] {
+    font-size:16px!important;
+  }
+}
+/* On short displays, scroll the full page instead of clipping nested panels. */
+@media (max-height:500px) {
+  .owner-workspace .app-content:has(.owner-dashboard),
+  .staff-workspace .app-content:has(.staff-dashboard),
+  .app-frame[data-page="agendamento"] .app-content,
+  .app-frame[data-page="booking"] .app-content,
+  .app-frame[data-page="meus-agendamentos"] .app-content,
+  .app-frame[data-page="my-appointments"] .app-content,
+  .app-frame[data-page="feed"] .app-content { overflow:auto; }
+  .owner-dashboard,.staff-dashboard,.owner-dashboard > div,.staff-dashboard > div,
+  .app-frame .booking-flow,.booking-flow > div,.owner-tabs,.staff-appointment-tabs,
+  .client-agenda,.client-agenda-panel,.feed-preview,.fan-feed { height:auto; min-height:min-content; overflow:visible; }
+  .booking-flow .booking-step-card,.owner-tabs > [role=tabpanel],
+  .staff-appointment-tabs > [role=tabpanel] { overflow:visible; }
+}
