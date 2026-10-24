@@ -1,3 +1,4 @@
+import { SalesRevenueChart } from '@/components/app/BusinessCharts';
 import { AnimatedNumber } from '@/components/app/AnimatedNumber';
 import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
@@ -174,6 +175,8 @@ export function ProductSalesTab({ products }: ProductSalesTabProps) {
           </CardContent>
         </Card>
       </div>
+
+      <SalesRevenueChart storeAccountId={settings.storeAccountId || ''} refreshSource={orders} />
 
       <div className="space-y-3">
         <h3 className="font-serif text-lg font-semibold">Pedidos recentes</h3>

@@ -1,8 +1,7 @@
-import { AnimatedNumber } from '@/components/app/AnimatedNumber';
 import { useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, ArrowRight } from '@/components/animated-icons';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 export type FeedItem = { id: string; title: string; image: string; category: string; body: string };
 /** Web adaptation of dohooo/react-native-reanimated-carousel's Card Fan (MIT). */
 export function FanFeed({ items }: { items: FeedItem[] }) {
@@ -13,7 +12,6 @@ export function FanFeed({ items }: { items: FeedItem[] }) {
   const reduced = useReducedMotion();
   const move = (direction: number) => { setDrag(0); setCurrent(index => (index + direction + items.length) % items.length); };
   if (!items.length) return null;
-  const active=items[current];
   return <section className="fan-feed" aria-roledescription="carrossel" aria-label="Publicações da barbearia" onKeyDown={e => { if(e.key === 'ArrowRight') {e.preventDefault(); move(1);} if(e.key === 'ArrowLeft') {e.preventDefault(); move(-1);} }}>
     <motion.div className="fan-stage" onPanStart={()=>{swiped.current=false;}} onPan={(_,info)=>{if(Math.abs(info.offset.x)>8)swiped.current=true;setDrag(Math.max(-1,Math.min(1,info.offset.x/120)));}} onPanEnd={(_,info) => { if (Math.abs(info.offset.x)>35||Math.abs(info.velocity.x)>400) move(info.offset.x<0 ? 1 : -1);else setDrag(0);window.setTimeout(()=>{swiped.current=false;},0); }}>
       {items.map((item,index) => {
@@ -23,7 +21,6 @@ export function FanFeed({ items }: { items: FeedItem[] }) {
       })}
     </motion.div>
     <div className="fan-controls"><button className="icon-button" aria-label="Publicação anterior" onClick={() => move(-1)}><ArrowLeft /></button><div className="fan-dots">{items.map((item,index)=><button key={item.id} aria-label={`Ver publicação ${index+1}: ${item.title}`} aria-current={index===current?'true':undefined} onClick={()=>{setDrag(0);setCurrent(index);}}><span/></button>)}</div><button className="icon-button" aria-label="Próxima publicação" onClick={() => move(1)}><ArrowRight /></button></div>
-    <div className="fan-post-summary" aria-live="polite"><p className="fan-post-counter"><AnimatedNumber value={current+1}/> de <AnimatedNumber value={items.length}/> · {active.category}</p><h2>{active.title}</h2><p>{active.body}</p></div>
-    <Dialog open={!!opened} onOpenChange={open=>{if(!open)setOpened(null);}}><DialogContent className="feed-post-detail"><DialogTitle>{opened?.title}</DialogTitle><DialogDescription>Prévia fictícia · {opened?.category}</DialogDescription>{opened&&<><img src={opened.image} alt={`Imagem ilustrativa: ${opened.title}`}/><p>{opened.body}</p></>}</DialogContent></Dialog>
+    <Dialog open={!!opened} onOpenChange={open=>{if(!open)setOpened(null);}}><DialogContent className="feed-post-detail"><header className="feed-post-toolbar"><DialogClose asChild><button type="button" className="feed-post-back"><ArrowLeft className="h-5 w-5" aria-hidden="true"/>Voltar</button></DialogClose></header>{opened&&<article><DialogDescription className="feed-post-category">{opened.category}</DialogDescription><DialogTitle>{opened.title}</DialogTitle><img src={opened.image} alt={opened.title}/><p>{opened.body}</p></article>}</DialogContent></Dialog>
   </section>;
 }

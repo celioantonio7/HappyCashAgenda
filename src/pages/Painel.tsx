@@ -1,3 +1,5 @@
+import { KpiNavCard } from '@/components/app/KpiNavCard';
+import { CommissionChart } from '@/components/app/BusinessCharts';
 import { RingLoader as Loader2 } from '@/components/app/RingLoader';
 import { AnimatedNumber } from '@/components/app/AnimatedNumber';
 import { formatCurrency } from '@/lib/formatCurrency';
@@ -218,6 +220,13 @@ export default function AdminDashboard() {
   const [filterService, setFilterService] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const filterPeriod = searchParams.get('period') || 'all';
+  const filterPayment = searchParams.get('payment') || 'all';
+  useEffect(() => {
+    const status = searchParams.get('status');
+    setFilterStatus(status && ['scheduled', 'completed', 'cancelled'].includes(status) ? status : 'all');
+    setFilterBarber('all'); setFilterService('all'); setSearchTerm('');
+  }, [searchParams]);
 
   // Form states
   const [showBarberDialog, setShowBarberDialog] = useState(false);
@@ -816,7 +825,10 @@ export default function AdminDashboard() {
       apt.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       apt.client_phone?.includes(searchTerm);
 
-    return matchesBarber && matchesService && matchesStatus && matchesSearch;
+    const date = parseLocalDate(apt.appointment_date);
+    const matchesPeriod = filterPeriod === 'today' ? apt.appointment_date === todayStr : filterPeriod === 'week' ? isWithinInterval(date, { start: weekStart, end: weekEnd }) : filterPeriod === 'month' ? isWithinInterval(date, { start: monthStart, end: monthEnd }) : true;
+    const matchesPayment = filterPayment !== 'pending-pix' || (apt.payment_method === 'pix' && apt.payment_status !== 'paid' && apt.status !== 'cancelled');
+    return matchesBarber && matchesService && matchesStatus && matchesSearch && matchesPeriod && matchesPayment;
   });
 
   // Handlers
@@ -1324,7 +1336,7 @@ export default function AdminDashboard() {
               {overviewSection==='operation'?<div className="overview-status-summary"><div><small>Hoje</small><strong><AnimatedNumber value={todayAppointments.length}/></strong></div><div><small>Pendentes</small><strong><AnimatedNumber value={appointments.filter(a=>a.status==='scheduled').length}/></strong></div><div><small>Pix a conferir</small><strong><AnimatedNumber value={pendingPixAppointments.length}/></strong></div></div>:<div>
               {/* Stats Cards */}
               <div className="owner-kpis">
-                <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
+                <KpiNavCard to="/painel?tab=appointments&period=today" className="border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1337,9 +1349,9 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
+                </KpiNavCard>
 
-                <Card>
+                <KpiNavCard to="/painel?tab=appointments&period=week&status=scheduled">
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1352,9 +1364,9 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
+                </KpiNavCard>
 
-                <Card>
+                <KpiNavCard to="/painel?tab=appointments&period=month">
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1367,9 +1379,9 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
+                </KpiNavCard>
 
-                <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+                <KpiNavCard to="/painel?tab=appointments&period=month&status=completed" className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1382,7 +1394,7 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
+                </KpiNavCard>
                 </div>
 
               </div>}
@@ -1491,7 +1503,7 @@ export default function AdminDashboard() {
 
               </div>:<section aria-label="Desempenho do negócio">
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                  <Card>
+                  <KpiNavCard to="/painel?tab=appointments&period=month&status=completed">
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between gap-3">
                         <div>
@@ -1504,9 +1516,9 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </CardContent>
-                  </Card>
+                  </KpiNavCard>
 
-                  <Card>
+                  <KpiNavCard to="/painel?tab=appointments&period=month&status=cancelled">
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between gap-3">
                         <div>
@@ -1519,9 +1531,9 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </CardContent>
-                  </Card>
+                  </KpiNavCard>
 
-                  <Card>
+                  <KpiNavCard to="/painel?tab=appointments&payment=pending-pix">
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between gap-3">
                         <div>
@@ -1534,9 +1546,9 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </CardContent>
-                  </Card>
+                  </KpiNavCard>
 
-                  <Card>
+                  <KpiNavCard to="/painel?tab=products&stock=low">
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between gap-3">
                         <div>
@@ -1549,7 +1561,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </CardContent>
-                  </Card>
+                  </KpiNavCard>
                 </div>
 
                 {/* Charts - Responsivo */}
@@ -1585,17 +1597,19 @@ export default function AdminDashboard() {
               <Card className="mb-6 overflow-hidden">
                 <CardHeader className="pb-2 p-3 sm:p-4">
                   <CardTitle className="font-serif text-sm sm:text-base">Desempenho de {settings.professionalLabel}</CardTitle>
-                  <CardDescription className="text-xs">Agendamentos por {settings.professionalLabel.toLowerCase()} neste mês</CardDescription>
+                  <CardDescription className="text-xs">Atendimentos concluídos por {settings.professionalLabel.toLowerCase()} neste mês</CardDescription>
                 </CardHeader>
                 <CardContent className="p-2 sm:p-4">
-                  <OperationalBarChart data={getBarberPerformance()} horizontal />
+                  <OperationalBarChart data={getBarberPerformance()} blocks />
                 </CardContent>
               </Card>
 
               </section>}
             </TabsContent>
 
-            <TabsContent value="appointments">
+            <TabsContent value="appointments" className="appointments-panel">
+              <div className="appointments-scroll" data-scroll-region>
+              {(filterPeriod !== 'all' || filterPayment !== 'all') && <div className="flex flex-wrap items-center gap-3 mb-3 text-sm"><span>Filtro: {filterPeriod === 'today' ? 'hoje' : filterPeriod === 'week' ? 'esta semana' : filterPeriod === 'month' ? 'este mês' : 'todos os períodos'}{filterPayment === 'pending-pix' ? ' · Pix pendente' : ''}</span><Button variant="ghost" onClick={() => setSearchParams({ tab: 'appointments' })}>Limpar filtros</Button></div>}
               {/* Status Summary Cards */}
               <div className="compact-status-grid grid grid-cols-3 gap-2 mb-4">
                 <Card className="cursor-pointer hover:ring-2 ring-accent transition-all" role="button" tabIndex={0} aria-pressed={filterStatus==='scheduled'} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setFilterStatus('scheduled');}}} onClick={() => setFilterStatus('scheduled')}>
@@ -1605,7 +1619,7 @@ export default function AdminDashboard() {
                         <AlertCircle className="w-5 h-5 text-amber-500" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold"><AnimatedNumber value={appointments.filter(a => a.status === 'scheduled').length}/></p>
+                        <p className="text-2xl font-bold">{appointments.filter(a => a.status === 'scheduled').length}</p>
                         <p className="text-sm text-muted-foreground">Agendados</p>
                       </div>
                     </div>
@@ -1618,7 +1632,7 @@ export default function AdminDashboard() {
                         <CheckCircle className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-primary"><AnimatedNumber value={appointments.filter(a => a.status === 'completed').length}/></p>
+                        <p className="text-2xl font-bold text-primary">{appointments.filter(a => a.status === 'completed').length}</p>
                         <p className="text-sm text-muted-foreground">Concluídos</p>
                       </div>
                     </div>
@@ -1631,7 +1645,7 @@ export default function AdminDashboard() {
                         <XCircle className="w-5 h-5 text-destructive" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-destructive"><AnimatedNumber value={appointments.filter(a => a.status === 'cancelled').length}/></p>
+                        <p className="text-2xl font-bold text-destructive">{appointments.filter(a => a.status === 'cancelled').length}</p>
                         <p className="text-sm text-muted-foreground">Cancelados</p>
                       </div>
                     </div>
@@ -1648,7 +1662,7 @@ export default function AdminDashboard() {
                      filterStatus === 'cancelled' ? 'Agendamentos Cancelados' : 'Todos os Agendamentos'}
                   </CardTitle>
                   <CardDescription>
-                    <AnimatedNumber value={filteredAppointments.length}/> agendamentos encontrados
+                    {filteredAppointments.length} agendamentos encontrados
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1704,6 +1718,7 @@ export default function AdminDashboard() {
                         setFilterService('all');
                         setFilterStatus('all');
                         setSearchTerm('');
+                        setSearchParams({ tab: 'appointments' });
                       }}
                     >
                       Limpar Filtros
@@ -1753,7 +1768,7 @@ export default function AdminDashboard() {
                                     <Clock className="w-3 h-3" /> <AnimatedNumber value={totalDuration}/> min
                                   </p>
                                   {apt.extraServices.length > 0 && (
-                                    <p className="text-xs text-primary"><AnimatedNumber value={apt.extraServices.length + 1}/> serviços</p>
+                                    <p className="text-xs text-primary">{apt.extraServices.length + 1} serviços</p>
                                   )}
                                 </div>
                                 <StatusBadge status={apt.status} />
@@ -1859,7 +1874,7 @@ export default function AdminDashboard() {
                                       <Clock className="w-3 h-3" /> <AnimatedNumber value={totalDuration}/> min
                                     </p>
                                     {apt.extraServices.length > 0 && (
-                                      <p className="text-xs text-primary"><AnimatedNumber value={apt.extraServices.length + 1}/> serviços</p>
+                                      <p className="text-xs text-primary">{apt.extraServices.length + 1} serviços</p>
                                     )}
                                   </div>
                                 </TableCell>
@@ -1906,31 +1921,33 @@ export default function AdminDashboard() {
                     </Table>
                   </div>
 
+                  <ListMore total={filteredAppointments.length} shown={listLimit} onMore={() => setListLimit(value => value + 10)} />
+                </CardContent>
+              </Card>
+              </div>
                   {/* Monthly Summary */}
-                  <div className="mt-6 p-4 rounded-lg bg-secondary/30 border border-border">
-                    <h3 className="font-semibold mb-3">Resumo do Mês ({format(today, 'MMMM yyyy', { locale: ptBR })})</h3>
-                    <div className="grid sm:grid-cols-3 gap-4">
+                  <div className="appointments-month-summary">
+                    <h3 className="font-semibold mb-2 text-xs">Resumo do Mês ({format(today, 'MMMM yyyy', { locale: ptBR })})</h3>
+                    <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <p className="text-sm text-muted-foreground">Total de Agendamentos</p>
-                        <p className="text-xl font-bold"><AnimatedNumber value={monthlyAppointments.length}/></p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Total de Agendamentos</p>
+                        <p className="text-sm sm:text-lg font-bold">{monthlyAppointments.length}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Concluídos</p>
-                        <p className="text-xl font-bold text-primary">
-                          <AnimatedNumber value={appointments.filter(a => {
-                            const date = new Date(a.appointment_date);
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Concluídos</p>
+                        <p className="text-sm sm:text-lg font-bold text-primary">
+                          {appointments.filter(a => {
+                            const date = parseLocalDate(a.appointment_date);
                             return isWithinInterval(date, { start: monthStart, end: monthEnd }) && a.status === 'completed';
-                          }).length}/>
+                          }).length}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Faturamento Estimado</p>
-                        <p className="text-xl font-bold text-primary"><AnimatedNumber value={monthlyRevenue??0} currency decimals={2}/></p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Faturamento Estimado</p>
+                        <p className="text-sm sm:text-lg font-bold text-primary"><AnimatedNumber value={monthlyRevenue??0} currency decimals={2}/></p>
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
             </TabsContent>
 
             {/* Tab Comissões */}
@@ -1989,6 +2006,8 @@ export default function AdminDashboard() {
                     </CardContent>
                   </Card>
                 </div>
+
+                <CommissionChart data={getBarberCommissions().map(item => ({ name: item.barber.name, value: item.totalCommission }))} />
 
                 {/* Lista de Comissões por profissional */}
                 <Card>
@@ -2113,6 +2132,7 @@ export default function AdminDashboard() {
 
             {/* Products Tab */}
             <TabsContent value="products">
+              {searchParams.get('stock') === 'low' && <div className="flex items-center gap-3 mb-3 text-sm"><span>Estoque de 3 unidades ou menos</span><Button variant="ghost" onClick={() => setSearchParams({ tab: 'products' })}>Mostrar todos</Button></div>}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
@@ -2129,7 +2149,7 @@ export default function AdminDashboard() {
                     <p className="text-center text-muted-foreground py-8">Nenhum produto cadastrado.</p>
                   ) : (
                     <div className="admin-product-list grid gap-3 lg:grid-cols-2">
-                      {products.slice(0,listLimit).map((product) => (
+                      {products.filter(product => searchParams.get('stock') !== 'low' || product.stock_quantity <= 3).slice(0,listLimit).map((product) => (
                         <div
                           key={product.id}
                           className={`p-4 rounded-lg border ${
@@ -2203,7 +2223,7 @@ export default function AdminDashboard() {
             <TabsContent value="hours">
               <BusinessHoursTab isAdmin={true} />
             </TabsContent>
-            <ListMore total={activeTab==='appointments'?filteredAppointments.length:activeTab==='barbers'?barbers.length:activeTab==='services'?services.length:activeTab==='products'?products.length:0} shown={listLimit} onMore={()=>setListLimit(n=>n+10)} />
+            <ListMore total={activeTab==='barbers'?barbers.length:activeTab==='services'?services.length:activeTab==='products'?products.filter(product => searchParams.get('stock') !== 'low' || product.stock_quantity <= 3).length:0} shown={listLimit} onMore={()=>setListLimit(n=>n+10)} />
           </Tabs>
         </motion.div>
       </div>

@@ -234,6 +234,13 @@ export function BrandingTab() {
             />
           </div>
 
+          <div className="space-y-2 md:col-span-2">
+            <Label>Cores do aplicativo</Label>
+            <p className="text-xs text-muted-foreground">Escolha uma cor ou personalize abaixo. A alteração aparece na hora; salve para aplicar à empresa.</p>
+            <div className="flex flex-wrap gap-2" aria-label="Sugestões de cor">
+              {['#b9ff39', '#3b82f6', '#a855f7', '#f97316', '#ec4899', '#14b8a6'].map(color => <button key={color} type="button" aria-label={`Usar cor ${color}`} aria-pressed={hslToHex(draft.primaryHsl).toLowerCase() === color} className="h-11 w-11 rounded-full border-2 border-border aria-pressed:ring-2 ring-foreground ring-offset-2 ring-offset-background" style={{ backgroundColor: color }} onClick={() => updateDraft({ primaryHsl: hexToHsl(color) })} />)}
+            </div>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="primaryColor">Cor principal</Label>
             <Input

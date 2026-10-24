@@ -26,6 +26,8 @@ export interface GradientStop {
 
 export interface BarSquaresProps {
   dataKey: string;
+  /** Cap cell size for charts with few categories. */
+  maxSquareSize?: number;
   yAxisId?: string | number;
   /** Fill color, gradient url, or pattern url. Default: var(--chart-line-primary) */
   fill?: string;
@@ -281,6 +283,7 @@ function SquareColumn({
 
 const BarSquaresInner = memo(function BarSquaresInner({
   dataKey,
+  maxSquareSize,
   yAxisId,
   fill = chartCssVars.linePrimary,
   colorKey,
@@ -333,8 +336,8 @@ const BarSquaresInner = memo(function BarSquaresInner({
       return 0;
     }
     const effectiveGroupGap = seriesCount > 1 ? groupGap : 0;
-    return (bandWidth - effectiveGroupGap * (seriesCount - 1)) / seriesCount;
-  }, [bandWidth, seriesCount, groupGap]);
+    return Math.min((bandWidth - effectiveGroupGap * (seriesCount - 1)) / seriesCount, maxSquareSize ?? Infinity);
+  }, [bandWidth, seriesCount, groupGap, maxSquareSize]);
 
   const totalAnimDuration = animationDuration || 1100;
   const staggerSpread = totalAnimDuration * 0.4;
@@ -365,7 +368,8 @@ const BarSquaresInner = memo(function BarSquaresInner({
         const categoryValue = barXAccessor(d);
         const bandPos = barScale(categoryValue) ?? 0;
         const effectiveGroupGap = seriesCount > 1 ? groupGap : 0;
-        const x = bandPos + seriesIndex * (squareSize + effectiveGroupGap);
+        const groupWidth = seriesCount * squareSize + Math.max(0, seriesCount - 1) * effectiveGroupGap;
+        const x = bandPos + (bandWidth - groupWidth) / 2 + seriesIndex * (squareSize + effectiveGroupGap);
 
         const valuePos = valueScale(value) ?? 0;
         const barLengthPx = baselineY - valuePos;

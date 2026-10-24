@@ -661,7 +661,7 @@ export default function Booking() {
                     {waitingQueue.map((item) => (
                       <div key={item.id} className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm">
                         <div className="min-w-0">
-                          <p className="truncate font-medium">#<AnimatedNumber value={item.position}/> - {item.client_name}</p>
+                          <p className="truncate font-medium">#{item.position} - {item.client_name}</p>
                           <p className="truncate text-xs text-muted-foreground">
                             {item.service_name} com {item.barber_name}
                           </p>
@@ -921,7 +921,7 @@ export default function Booking() {
                               <span>Excede horário</span>
                             </div>
                           </div>
-                          <div className="booking-times grid grid-cols-3 gap-2 max-h-[300px] overflow-y-auto p-1">
+                          <div className="booking-times grid grid-cols-3 gap-2 p-1">
                             {allSlots.map((slot) => {
                               const isBooked = bookedSlots.includes(slot);
                               const isExceeded = exceededSlots.includes(slot);
@@ -1066,7 +1066,7 @@ export default function Booking() {
                         <div className="booking-selection" role="status" aria-live="polite">
                           <div className="flex justify-between items-center">
                             <div>
-                              <p className="font-medium"><AnimatedNumber value={selectedServices.length}/> item(ns) selecionado(s)</p>
+                              <p className="font-medium">{selectedServices.length} item(ns) selecionado(s)</p>
                               <p className="text-sm text-muted-foreground">Duração total: <AnimatedNumber value={totalDuration}/> min</p>
                             </div>
                             <div className="text-right">

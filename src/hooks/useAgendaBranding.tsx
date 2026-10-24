@@ -1,3 +1,4 @@
+import { applyBrandingToDocument } from '@/lib/agendaTheme';
 import { isAgendaDemo } from "@/lib/agendaDemo";
 import {
   createContext,
@@ -506,15 +507,6 @@ const writePreview = (settings: AgendaBrandingSettings) => {
   clearPersistedPreview();
 };
 
-const applyBrandingToDocument = (settings: AgendaBrandingSettings) => {
-  if (!isBrowser()) return;
-  const root = document.documentElement;
-  root.style.setProperty("--brand-primary", settings.primaryHsl);
-  
-  root.style.setProperty("--brand-accent", settings.accentHsl);
-  root.style.setProperty("--gold", settings.accentHsl);
-  
-};
 
 export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
   const { user, isAdmin, ownerUserId } = useAuth();

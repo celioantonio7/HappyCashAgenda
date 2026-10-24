@@ -16,14 +16,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { uploadAgendaBrandingImage } from "@/lib/agendaStorage";
 import { buildAgendaPublicHomePath } from "@/lib/agendaPublicLink";
 
-type ImageField = "logoUrl" | "heroImageUrl" | "aboutImageUrl" | "locationImageUrl";
-type UploadKind = "logo" | "hero" | "about" | "location";
+type ImageField = "logoUrl";
+type UploadKind = "logo";
 
 const imageFieldMap: Record<ImageField, UploadKind> = {
   logoUrl: "logo",
-  heroImageUrl: "hero",
-  aboutImageUrl: "about",
-  locationImageUrl: "location",
 };
 
 const imageAccept = "image/*,.avif,.bmp,.gif,.heic,.heif,.ico,.jpg,.jpeg,.png,.svg,.tif,.tiff,.webp";
@@ -395,29 +392,6 @@ export function PublicPageSettingsTab() {
           onPick={(file) => void handleUpload("logoUrl", file)}
           imageStyle={{ objectFit: "contain" }}
         />
-        <ImageUploadField
-          label="Foto de fundo (hero)"
-          value={draft.heroImageUrl}
-          uploading={uploadingField === "heroImageUrl"}
-          onPick={(file) => void handleUpload("heroImageUrl", file)}
-          imageStyle={{
-            objectPosition: `${draft.heroImagePositionX}% ${draft.heroImagePositionY}%`,
-            transform: `scale(${draft.heroImageScale})`,
-            transformOrigin: `${draft.heroImagePositionX}% ${draft.heroImagePositionY}%`,
-          }}
-        />
-        <ImageUploadField
-          label="Imagem sobre nos"
-          value={draft.aboutImageUrl}
-          uploading={uploadingField === "aboutImageUrl"}
-          onPick={(file) => void handleUpload("aboutImageUrl", file)}
-          imageStyle={{
-            objectPosition: `${draft.aboutImagePositionX}% ${draft.aboutImagePositionY}%`,
-            transform: `scale(${draft.aboutImageScale})`,
-            transformOrigin: `${draft.aboutImagePositionX}% ${draft.aboutImagePositionY}%`,
-          }}
-        />
-
         <div className="space-y-3 rounded-lg border p-3">
           <p className="text-sm font-medium">Tamanho do logo</p>
           <SliderField
@@ -431,65 +405,12 @@ export function PublicPageSettingsTab() {
           />
         </div>
 
-        <ImagePositionControls
-          title="Ajuste da foto de fundo"
-          x={draft.heroImagePositionX}
-          y={draft.heroImagePositionY}
-          scale={draft.heroImageScale}
-          onChange={(next) => updateDraft({
-            heroImagePositionX: next.x ?? draft.heroImagePositionX,
-            heroImagePositionY: next.y ?? draft.heroImagePositionY,
-            heroImageScale: next.scale ?? draft.heroImageScale,
-          })}
-        />
-        <ImagePositionControls
-          title="Ajuste da imagem sobre nos"
-          x={draft.aboutImagePositionX}
-          y={draft.aboutImagePositionY}
-          scale={draft.aboutImageScale}
-          onChange={(next) => updateDraft({
-            aboutImagePositionX: next.x ?? draft.aboutImagePositionX,
-            aboutImagePositionY: next.y ?? draft.aboutImagePositionY,
-            aboutImageScale: next.scale ?? draft.aboutImageScale,
-          })}
-        />
-
         </div></details>
         <details className="settings-disclosure" ><summary>Textos da empresa</summary><div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="heroTitle">Titulo da pagina inicial</Label>
-          <Input
-            id="heroTitle"
-            value={draft.heroTitle}
-            onChange={(e) => updateDraft({ heroTitle: e.target.value })}
-            placeholder={draft.displayName}
-          />
-        </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="heroSubtitle">Subtitulo</Label>
-          <Textarea
-            id="heroSubtitle"
-            value={draft.heroSubtitle || draft.tagline}
-            onChange={(e) => updateDraft({ heroSubtitle: e.target.value })}
-            rows={2}
-          />
-        </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="closedMessage">Mensagem de fechado</Label>
-          <Input
-            id="closedMessage"
-            value={draft.closedMessage}
-            onChange={(e) => updateDraft({ closedMessage: e.target.value })}
-          />
-        </div>
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="aboutTitle">Titulo sobre nos</Label>
-          <Input
-            id="aboutTitle"
-            value={draft.aboutTitle}
-            onChange={(e) => updateDraft({ aboutTitle: e.target.value })}
-          />
-        </div>
+
+
+
+
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="aboutText">Texto sobre nos</Label>
           <Textarea
@@ -552,29 +473,6 @@ function ImageUploadField({
           />
         </label>
       </Button>
-    </div>
-  );
-}
-
-function ImagePositionControls({
-  title,
-  x,
-  y,
-  scale,
-  onChange,
-}: {
-  title: string;
-  x: number;
-  y: number;
-  scale: number;
-  onChange: (next: { x?: number; y?: number; scale?: number }) => void;
-}) {
-  return (
-    <div className="space-y-3 rounded-lg border p-3">
-      <p className="text-sm font-medium">{title}</p>
-      <SliderField label="Mover horizontal" value={x} min={0} max={100} step={1} onChange={(value) => onChange({ x: value })} />
-      <SliderField label="Mover vertical" value={y} min={0} max={100} step={1} onChange={(value) => onChange({ y: value })} />
-      <SliderField label="Tamanho" value={scale} min={1} max={2} step={0.01} onChange={(value) => onChange({ scale: value })} format={(value) => `${Math.round(value * 100)}%`} />
     </div>
   );
 }

@@ -71,7 +71,7 @@ export function AppointmentQueueTab({ appointments, onConfirmPayment }: Appointm
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-serif text-xl font-bold">Fila de Atendimento</h2>
-        <Badge variant="secondary" className="text-sm"><AnimatedNumber value={queue.length}/> na fila</Badge>
+        <Badge variant="secondary" className="text-sm">{queue.length} na fila</Badge>
       </div>
 
       {queue.length === 0 ? (
@@ -95,7 +95,7 @@ export function AppointmentQueueTab({ appointments, onConfirmPayment }: Appointm
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${index === 0 && isToday ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
-                        <AnimatedNumber value={index + 1}/>
+                        {index + 1}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">

@@ -102,7 +102,7 @@ export default function Login() {
       setForgot(false);
     } finally { setResetBusy(false); }
   };
-  return <main className="auth-root">
+  return <main className="auth-root" data-mode={mode}>
     <AuthBackground />
     <div className="auth-panel">
       <section className="auth-card" aria-labelledby="auth-heading">
@@ -126,7 +126,7 @@ export default function Login() {
         <button className="auth-google" onClick={google} disabled={busy} type="button"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M43.6 24.5c0-1.5-.1-3-.4-4.5H24v8.5h11a9.4 9.4 0 0 1-4.1 6.2v5.2h6.7c3.9-3.6 6-8.9 6-15.4Z"/><path fill="#34A853" d="M24 44c5.5 0 10.1-1.8 13.5-4.9l-6.7-5.2c-1.8 1.2-4.1 1.9-6.8 1.9-5.3 0-9.9-3.6-11.5-8.4H5.6v5.4A20.4 20.4 0 0 0 24 44Z"/><path fill="#FBBC05" d="M12.5 27.4a12.3 12.3 0 0 1 0-6.8v-5.4H5.6a20.2 20.2 0 0 0 0 17.6l6.9-5.4Z"/><path fill="#EA4335" d="M24 12.2c3 0 5.6 1 7.7 3l5.8-5.8A19.5 19.5 0 0 0 24 4 20.4 20.4 0 0 0 5.6 15.2l6.9 5.4c1.6-4.8 6.2-8.4 11.5-8.4Z"/></svg>Entrar com Google</button>
         <p className="auth-secondary">{mode === 'login' ? 'Ainda não tem uma conta?' : 'Já tem uma conta?'}{' '}<button type="button" disabled={busy} className="font-medium underline underline-offset-4 py-2" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}>{mode === 'login' ? 'Criar conta' : 'Entrar'}</button></p>
       </section>
-      <p className="flex justify-center items-center gap-2 text-[10px] text-muted-foreground mt-7"><ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />Seus dados estão protegidos</p>
+      <p className="auth-security flex justify-center items-center gap-2 text-[10px] text-muted-foreground"><ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />Seus dados estão protegidos</p>
     </div>
     <Dialog open={forgot} onOpenChange={setForgot}><DialogContent><DialogHeader><DialogTitle>Recuperar sua senha</DialogTitle><DialogDescription>Informe o e-mail da sua conta para receber as instruções.</DialogDescription></DialogHeader><form onSubmit={sendReset} className="space-y-4"><Label htmlFor="reset-email">E-mail</Label><Input id="reset-email" type="email" autoComplete="email" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required /><Button type="submit" disabled={resetBusy} className="w-full">{resetBusy ? 'Enviando…' : 'Enviar instruções'}</Button></form></DialogContent></Dialog>
   </main>;

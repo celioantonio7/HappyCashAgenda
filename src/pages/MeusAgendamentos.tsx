@@ -670,7 +670,7 @@ export default function MyAppointments() {
       <div className="history-page client-agenda container px-4 py-5">
         <header className="client-agenda-heading"><h1>Meus <span className="text-primary">agendamentos</span></h1><p>Acompanhe seus próximos horários e histórico.</p><Button className="w-full" onClick={()=>navigate(publicBookingPath)}><Plus className="h-4 w-4 mr-2"/>Novo Agendamento</Button></header>
         <div className="metric-actions client-agenda-metrics" aria-label="Filtrar meus agendamentos">
-          {([{value:'upcoming',label:'Próximos',count:upcomingAppointments.length,icon:Calendar},{value:'completed',label:'Concluídos',count:appointments.filter(a=>a.status==='completed').length,icon:CheckCircle},{value:'cancelled',label:'Cancelados',count:appointments.filter(a=>a.status==='cancelled').length,icon:XCircle}] as const).map(metric=><button key={metric.value} className={`metric-action metric-${metric.value}`} aria-pressed={metric.value==='upcoming'?clientSection==='upcoming':clientSection==='history'&&historyFilter===metric.value} onClick={()=>{if(metric.value==='upcoming')setClientSection('upcoming');else{setClientSection('history');setHistoryFilter(metric.value);setHistoryLimit(10);}}}><span className="metric-icon"><metric.icon aria-hidden="true" className="h-4 w-4"/></span><span><small>{metric.label}</small><strong><AnimatedNumber value={metric.count}/></strong></span></button>)}
+          {([{value:'upcoming',label:'Próximos',count:upcomingAppointments.length,icon:Calendar},{value:'completed',label:'Concluídos',count:appointments.filter(a=>a.status==='completed').length,icon:CheckCircle},{value:'cancelled',label:'Cancelados',count:appointments.filter(a=>a.status==='cancelled').length,icon:XCircle}] as const).map(metric=><button key={metric.value} className={`metric-action metric-${metric.value}`} aria-pressed={metric.value==='upcoming'?clientSection==='upcoming':clientSection==='history'&&historyFilter===metric.value} onClick={()=>{if(metric.value==='upcoming')setClientSection('upcoming');else{setClientSection('history');setHistoryFilter(metric.value);setHistoryLimit(10);}}}><span className="metric-icon"><metric.icon aria-hidden="true" className="h-4 w-4"/></span><span><small>{metric.label}</small><strong>{metric.count}</strong></span></button>)}
         </div>
         <Button variant="outline" className="client-loyalty-button" aria-pressed={clientSection==='loyalty'} onClick={()=>setClientSection(current=>current==='loyalty'?'upcoming':'loyalty')}>{clientSection==='loyalty'?'Voltar aos agendamentos':'Fidelidade'}</Button>
         <section className="client-agenda-panel" aria-label={clientSection==='upcoming'?'Próximos agendamentos':clientSection==='history'?'Histórico de agendamentos':'Fidelidade'}>
@@ -783,7 +783,7 @@ export default function MyAppointments() {
                             <span>Excede horário</span>
                           </div>
                         </div>
-                        <div className="grid max-h-[320px] grid-cols-3 gap-2 overflow-y-auto p-1">
+                        <div className="grid grid-cols-3 gap-2 p-1">
                           {rescheduleAllSlots.map((slot) => {
                             const isBooked = rescheduleBookedSlots.includes(slot);
                             const isExceeded = rescheduleExceededSlots.includes(slot);

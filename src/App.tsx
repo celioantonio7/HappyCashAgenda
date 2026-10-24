@@ -24,6 +24,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Perfil = lazy(() => import("./pages/Perfil"));
 const Feed = lazy(() => import("./pages/Feed"));
 const Assinatura = lazy(() => import("./pages/Assinatura"));
+const ExemplosGraficos = lazy(() => import("./pages/ExemplosGraficos"));
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -41,6 +42,7 @@ const App = () => (
                 <Seo />
                 <Suspense fallback={<LoadingState fullScreen label="Abrindo sua agenda…"/>}>
                 <Routes>
+                  <Route path="/exemplos-graficos" element={<ExemplosGraficos />} />
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/perfil" element={<Perfil />} />
