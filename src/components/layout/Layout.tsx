@@ -1,3 +1,5 @@
+import { useNativePush } from "@/hooks/useNativePush";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ScrollHint } from '@/components/app/ScrollHint';
 import { useEffect, useState, useRef, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
@@ -12,6 +14,7 @@ export function Layout({ children, showHeader = true }: { children: ReactNode; s
   const contentRef = useRef<HTMLElement>(null);
   const { user, isAdmin, isStaff, signOut } = useAuth();
   const { settings } = useAgendaBranding();
+  useNativePush(user ? settings.storeAccountId : undefined);
   const location = useLocation();
   const owner = isAdmin && ['/painel', '/admin', '/perfil'].includes(location.pathname);
   const staff = ['/painel-profissional','/painel-barbeiro','/professional'].includes(location.pathname) || (isStaff && location.pathname.endsWith('/perfil'));
@@ -50,8 +53,8 @@ export function Layout({ children, showHeader = true }: { children: ReactNode; s
       <div className="sidebar-footer"><Link to="/perfil" aria-label="Meu perfil" title="Meu perfil" aria-current={tab === 'profile' ? 'page' : undefined}><User className="h-4 w-4" aria-hidden="true"/><span className="sidebar-label">Meu perfil</span></Link><Link to={publicPath('/agendamento')} aria-label="Abrir agendamento" title="Abrir agendamento"><ArrowUpRight className="h-4 w-4" aria-hidden="true" /><span className="sidebar-label">Abrir agendamento</span></Link><button className="sidebar-sign-out profile-row text-xs border-0 min-h-10" aria-label="Sair da conta" title="Sair da conta" onClick={signOut}><LogOut className="h-4 w-4" aria-hidden="true" /><span className="sidebar-label">Sair da conta</span></button></div>
     </aside>}
     {showHeader && <header className="app-topbar">
-      {owner ? <div className="flex items-center gap-3"><button className="sidebar-toggle owner-mobile-menu" onClick={() => setMenu(!menu)} aria-label={menu ? 'Fechar menu' : 'Abrir menu'} title={menu ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menu} aria-controls="owner-navigation">{menu ? <ChevronLeft /> : <ChevronRight />}</button><span className="text-xs text-muted-foreground">Meu negócio <span className="mx-2 text-border">/</span><span className="text-foreground">{activeArea}</span></span></div> : <Link className="brand min-w-0" to={staff ? '/painel-profissional' : publicPath('/agendamento')}>{brand}</Link>}
-      <div className="app-topbar-actions"><time className="hidden sm:block text-[11px] text-muted-foreground" dateTime={new Date().toISOString().slice(0,10)}>{new Intl.DateTimeFormat('pt-BR',{day:'numeric',month:'long',timeZone:'America/Sao_Paulo'}).format(new Date())}</time><Link className="icon-button" to={user ? (owner || staff ? '/perfil' : publicPath('/perfil')) : publicPath('/login')} aria-label={user ? 'Meu perfil' : 'Entrar na conta'}><User className="h-4 w-4" /></Link></div>
+      {owner ? <div className="flex items-center gap-3"><button className="sidebar-toggle owner-mobile-menu" onClick={() => setMenu(!menu)} aria-label={menu ? 'Fechar menu' : 'Abrir menu'} title={menu ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menu} aria-controls="owner-navigation">{menu ? <ChevronLeft /> : <ChevronRight />}</button><span className="text-xs text-muted-foreground">Meu negócio <span className="mx-2 text-border">/</span><span className="text-foreground">{activeArea}</span></span></div> : <Link className="brand min-w-0" to={staff ? '/painel-profissional' : publicPath('/sobre')}>{brand}</Link>}
+      <div className="app-topbar-actions">{user && <NotificationBell />}<time className="hidden sm:block text-[11px] text-muted-foreground" dateTime={new Date().toISOString().slice(0,10)}>{new Intl.DateTimeFormat('pt-BR',{day:'numeric',month:'long',timeZone:'America/Sao_Paulo'}).format(new Date())}</time><Link className="icon-button" to={user ? (owner || staff ? '/perfil' : publicPath('/perfil')) : publicPath('/login')} aria-label={user ? 'Meu perfil' : 'Entrar na conta'}><User className="h-4 w-4" /></Link></div>
     </header>}
     <main ref={contentRef} id="app-content" className={`app-content ${!owner && !staff ? 'client-content' : ''}`}>
       {isAgendaDemo && <div className="offline-strip">Demonstração: dados fictícios, sem gravação no banco.</div>}

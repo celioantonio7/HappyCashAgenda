@@ -1,0 +1,12 @@
+CREATE ROLE anon; CREATE ROLE authenticated;
+CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY);
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+GRANT USAGE ON SCHEMA auth TO anon,authenticated; GRANT EXECUTE ON FUNCTION auth.uid() TO anon,authenticated;
+CREATE TABLE public.store_accounts(id uuid PRIMARY KEY,owner_user_id uuid REFERENCES auth.users);
+CREATE SCHEMA agenda_private; GRANT USAGE ON SCHEMA agenda_private TO anon,authenticated;
+CREATE FUNCTION agenda_private.owns_store(s uuid) RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path='' AS $$ SELECT EXISTS(SELECT 1 FROM public.store_accounts WHERE id=s AND owner_user_id=auth.uid()) $$;
+CREATE FUNCTION agenda_private.store_is_public(s uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
+CREATE FUNCTION agenda_private.fill_store() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$;
+CREATE SCHEMA storage; CREATE TABLE storage.buckets(id text PRIMARY KEY,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+CREATE TABLE storage.objects(id uuid PRIMARY KEY,bucket_id text,name text);
+CREATE FUNCTION storage.foldername(name text) RETURNS text[] LANGUAGE sql AS $$ SELECT string_to_array(name,'/') $$;

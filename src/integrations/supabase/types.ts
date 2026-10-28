@@ -37,6 +37,7 @@ export type Database = {
           hero_subtitle: string | null
           hero_title: string | null
           id: string
+          google_review_url: string | null
           instagram_url: string | null
           location_image_url: string | null
           logo_size: number
@@ -89,6 +90,7 @@ export type Database = {
           hero_subtitle?: string | null
           hero_title?: string | null
           id?: string
+          google_review_url?: string | null
           instagram_url?: string | null
           location_image_url?: string | null
           logo_size?: number
@@ -141,6 +143,7 @@ export type Database = {
           hero_subtitle?: string | null
           hero_title?: string | null
           id?: string
+          google_review_url?: string | null
           instagram_url?: string | null
           location_image_url?: string | null
           logo_size?: number
@@ -1059,6 +1062,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      resolve_public_business_slug: { Args: { p_slug: string }; Returns: string | null }
+      register_agenda_client: { Args: { p_slug: string }; Returns: undefined }
+
       add_service_to_appointment: {
         Args: {
           p_appointment_id: string

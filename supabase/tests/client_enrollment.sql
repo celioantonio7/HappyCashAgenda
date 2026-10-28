@@ -1,0 +1,42 @@
+DO $$
+DECLARE owner_a uuid := gen_random_uuid(); owner_b uuid := gen_random_uuid(); store_a uuid := gen_random_uuid(); store_b uuid := gen_random_uuid(); client_a uuid := gen_random_uuid(); client_b uuid := gen_random_uuid(); employee_id uuid := gen_random_uuid(); count_before bigint;
+BEGIN
+ INSERT INTO auth.users(id,email) VALUES(owner_a,'owner-a@example.test'),(owner_b,'owner-b@example.test');
+ INSERT INTO public.store_accounts VALUES(store_a,owner_a),(store_b,owner_b);
+ INSERT INTO public.agenda_business_settings(slug,owner_user_id,store_account_id) VALUES('barber-a',owner_a,store_a),('barber-b',owner_b,store_b);
+ -- Manual entry with same email must never be claimed by a new signup.
+ INSERT INTO public.agenda_clients(name,email,owner_user_id,store_account_id) VALUES('Manual','client@example.test',owner_a,store_a);
+ INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES(client_a,'client@example.test','{"full_name":"Cliente A","phone":"11999999999","agenda_business_slug":"old-a","role":"admin"}');
+ IF NOT EXISTS(SELECT 1 FROM public.agenda_clients WHERE user_id=client_a AND store_account_id=store_a AND owner_user_id=owner_a AND name='Cliente A' AND NOT user_email_confirmed) THEN RAISE EXCEPTION 'Signup did not enroll using canonical tenant'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.agenda_clients WHERE name='Manual' AND user_id IS NULL) THEN RAISE EXCEPTION 'Manual identity claimed by email'; END IF;
+ INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES(client_b,'b@example.test','{"full_name":"Cliente B","agenda_business_slug":"barber-b"}');
+ IF EXISTS(SELECT 1 FROM public.agenda_clients WHERE user_id=client_b AND store_account_id=store_a) THEN RAISE EXCEPTION 'Cross tenant signup'; END IF;
+ SELECT count(*) INTO count_before FROM public.agenda_clients WHERE user_id=client_a;
+ PERFORM set_config('request.jwt.claim.sub',client_a::text,true);
+ SET LOCAL ROLE authenticated;
+ PERFORM public.register_agenda_client('barber-a');
+ PERFORM public.register_agenda_client('old-a');
+ RESET ROLE;
+ IF (SELECT count(*) FROM public.agenda_clients WHERE user_id=client_a)<>count_before THEN RAISE EXCEPTION 'RPC not idempotent'; END IF;
+ UPDATE auth.users SET email_confirmed_at=now() WHERE id=client_a;
+ IF NOT EXISTS(SELECT 1 FROM public.agenda_clients WHERE user_id=client_a AND user_email_confirmed) THEN RAISE EXCEPTION 'Email status not synchronized'; END IF;
+ PERFORM set_config('request.jwt.claim.sub',owner_a::text,true);
+ PERFORM public.register_agenda_client('barber-a');
+ IF EXISTS(SELECT 1 FROM public.agenda_clients WHERE user_id=owner_a) THEN RAISE EXCEPTION 'Owner enrolled in own business'; END IF;
+ INSERT INTO auth.users(id,email) VALUES(employee_id,'employee@example.test');
+ INSERT INTO public.barbers(user_id,store_account_id) VALUES(employee_id,store_a);
+ PERFORM set_config('request.jwt.claim.sub',employee_id::text,true);
+ PERFORM public.register_agenda_client('barber-a');
+ IF EXISTS(SELECT 1 FROM public.agenda_clients WHERE user_id=employee_id) THEN RAISE EXCEPTION 'Employee enrolled in own business'; END IF;
+ UPDATE public.agenda_business_settings SET public_booking_enabled=false WHERE slug='barber-a';
+ PERFORM set_config('request.jwt.claim.sub',client_b::text,true);
+ PERFORM public.register_agenda_client('barber-a');
+ PERFORM public.register_agenda_client('missing-store');
+ IF EXISTS(SELECT 1 FROM public.agenda_clients WHERE user_id=client_b AND store_account_id=store_a) THEN RAISE EXCEPTION 'Disabled business accepted enrollment'; END IF;
+ IF has_function_privilege('anon','public.register_agenda_client(text)','EXECUTE') OR has_function_privilege('authenticated','agenda_private.enroll_agenda_client(uuid,text)','EXECUTE') THEN RAISE EXCEPTION 'Enrollment exposed privileged function'; END IF;
+ PERFORM set_config('request.jwt.claim.sub','',true);
+ BEGIN PERFORM public.register_agenda_client('barber-b'); RAISE EXCEPTION 'Guest enrollment permitted'; EXCEPTION WHEN raise_exception THEN IF SQLERRM='Guest enrollment permitted' THEN RAISE; END IF; END;
+ DELETE FROM auth.users WHERE id=client_a;
+ IF EXISTS(SELECT 1 FROM public.agenda_clients WHERE user_id=client_a) THEN RAISE EXCEPTION 'FK did not clear deleted auth user'; END IF;
+ RAISE NOTICE 'PASS signup/slug alias tenant routing, email no-merge, idempotent authenticated RPC, pending/confirmed status, staff exclusion, disabled/unknown business, grants, guest blocking, FK cleanup';
+END $$;

@@ -1,3 +1,4 @@
+import { removeNativePushForSession } from "@/hooks/useNativePush";
 import {
   createContext,
   useContext,
@@ -17,6 +18,7 @@ type SignUpInput = {
   email: string;
   password: string;
   phone: string;
+  businessSlug?: string;
 };
 
 type AgendaProfileRow = {
@@ -204,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async ({ fullName, email, password, phone }: SignUpInput) => {
+  const signUp = async ({ fullName, email, password, phone, businessSlug }: SignUpInput) => {
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedPhone = normalizePhone(phone);
     const redirectUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
@@ -218,6 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           captchaToken,
           data: {
             role: "client",
+            ...(businessSlug ? { agenda_business_slug: businessSlug } : {}),
             full_name: fullName.trim(),
             phone: normalizedPhone,
           },
@@ -279,6 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    await removeNativePushForSession().catch(() => {});
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);

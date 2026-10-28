@@ -1,3 +1,4 @@
+import { businessNow, businessClock } from "@/lib/businessTime";
 import { AnimatedNumber } from '@/components/app/AnimatedNumber';
 import { RingLoader as Loader2 } from '@/components/app/RingLoader';
 import { formatCurrency } from '@/lib/formatCurrency';
@@ -6,7 +7,7 @@ import { CollectionPhoto } from '@/components/app/CollectionPhoto';
 import { EmptyState } from '@/components/app/EmptyState';
 import { isAgendaDemo, demoServices, demoBarbers } from "@/lib/agendaDemo";
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Briefcase, Calendar, Clock, User, ArrowRight, ArrowLeft, Check, AlertCircle, Users } from '@/components/animated-icons';
 import { addDays, format } from 'date-fns';
@@ -108,9 +109,10 @@ export default function Booking() {
   const { user, loading: authLoading } = useAuth();
   const { settings, loading: brandingLoading } = useAgendaBranding();
   useVisibleRefresh(()=>{void fetchServices();void fetchBarbers();},!!settings.storeAccountId);
-  const { getAvailableTimeSlots, getAllBusinessSlots, getHoursForDay, canBookServiceAtTime } = useBusinessHours(settings.storeAccountId);
+  const { getAvailableTimeSlots, getAllBusinessSlots, getHoursForDay, canBookServiceAtTime, loading: hoursLoading } = useBusinessHours(settings.storeAccountId);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const publicLoginPath = withAgendaPublicSearch('/login', settings);
   const publicAppointmentsPath = withAgendaPublicSearch('/meus-agendamentos', settings);
   const canUseAppointment = settings.serviceMode !== 'walk_in';
@@ -118,13 +120,13 @@ export default function Booking() {
   const isQueueFlow = bookingFlow === 'queue';
 
   useEffect(() => {
-    if (settings.serviceMode === 'walk_in') {
+    if (settings.serviceMode === 'walk_in' || (settings.serviceMode === 'both' && new URLSearchParams(location.search).get('modo') === 'fila')) {
       setBookingFlow('queue');
       if (step === 'datetime') setStep('confirm');
     } else if (settings.serviceMode === 'appointment') {
       setBookingFlow('appointment');
     }
-  }, [settings.serviceMode, step]);
+  }, [settings.serviceMode, step, location.search]);
 
   useEffect(() => {
     if (settings.storeAccountId || isAgendaDemo) {
@@ -229,10 +231,10 @@ export default function Booking() {
   const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
 
   useEffect(() => {
-    if (selectedDate && selectedBarber && selectedServices.length > 0) {
+    if (!hoursLoading && selectedDate && selectedBarber && selectedServices.length > 0) {
       fetchAvailableSlots();
     }
-  }, [selectedDate, selectedBarber, selectedServices]);
+  }, [selectedDate, selectedBarber, selectedServices, hoursLoading]);
 
   // Realtime: atualiza slots quando há mudanças nos agendamentos do barbeiro selecionado
   useEffect(() => {
@@ -352,10 +354,9 @@ export default function Booking() {
       }
     }
 
-    const now = new Date();
-    const todayString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const isToday = dateString === todayString;
-    const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+    const current = businessNow();
+    const isToday = dateString === current.date;
+    const currentTotalMinutes = current.minutes;
 
     // Filtrar horários passados de todos os slots
     const filterPast = (slot: string) => {
@@ -644,7 +645,8 @@ export default function Booking() {
               : `Escolha ${settings.serviceLabel.toLowerCase()}, ${settings.professionalLabel.toLowerCase()} e horário ideal para você`}
           </p>
 
-          {settings.publicQueueVisible && canUseQueue && (
+          {settings.publicQueueVisible && canUseQueue && !user && <p className="mb-4 rounded-lg border border-border p-3 text-sm"><button className="underline text-primary" onClick={() => navigate(publicLoginPath)}>Entre na sua conta</button> para acompanhar a fila desta barbearia.</p>}
+          {settings.publicQueueVisible && canUseQueue && user && (
             <Card className="mb-6 border-primary/20">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -667,7 +669,7 @@ export default function Booking() {
                           </p>
                         </div>
                         <span className="shrink-0 text-xs text-muted-foreground">
-                          {format(new Date(item.created_at), 'HH:mm')}
+                          {businessClock(item.created_at)}
                         </span>
                       </div>
                     ))}

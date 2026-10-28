@@ -1,3 +1,4 @@
+import { validGoogleReviewUrl } from "@/lib/agendaPublicUrl";
 import { applyBrandingToDocument } from '@/lib/agendaTheme';
 import { isAgendaDemo } from "@/lib/agendaDemo";
 import {
@@ -7,6 +8,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -16,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   isAgendaAdminPath,
   isAgendaReservedSlug,
+  normalizeAgendaSlug,
   resolveAgendaPublicSlug,
   resolveAgendaRequestedSlug,
 } from "@/lib/agendaSlug";
@@ -52,6 +55,7 @@ export type AgendaBrandingSettings = {
   adminWhatsapp: string;
   facebookUrl: string;
   instagramUrl: string;
+  googleReviewUrl: string;
   pixKey: string;
   pixMerchantName: string;
   primaryHsl: string;
@@ -76,6 +80,7 @@ export type AgendaBrandingSettings = {
 type AgendaBrandingContextType = {
   settings: AgendaBrandingSettings;
   loading: boolean;
+  error: string | null;
   updatePreview: (settings: AgendaBrandingSettings) => void;
   saveSettings: (settings: AgendaBrandingSettings) => Promise<{ error: string | null }>;
   resetPreview: () => void;
@@ -113,6 +118,7 @@ type AgendaBusinessSettingsRow = {
   admin_whatsapp: string | null;
   facebook_url: string | null;
   instagram_url: string | null;
+  google_review_url?: string | null;
   pix_key: string | null;
   pix_merchant_name: string | null;
   primary_hsl: string;
@@ -165,6 +171,7 @@ type AgendaBusinessSettingsUpsert = {
   admin_whatsapp: string | null;
   facebook_url: string | null;
   instagram_url: string | null;
+  google_review_url?: string | null;
   pix_key: string | null;
   pix_merchant_name: string | null;
   primary_hsl: string;
@@ -193,7 +200,7 @@ const SETTINGS_COLUMNS_PUBLIC_PAGE =
   `${SETTINGS_COLUMNS_BASE}, logo_size, hero_image_url, hero_image_position_x, hero_image_position_y, hero_image_scale, about_image_url, about_image_position_x, about_image_position_y, about_image_scale, team_image_url, location_image_url, hero_title, hero_subtitle, closed_message, about_title, about_text, address, whatsapp, admin_whatsapp, facebook_url, instagram_url, pix_key, pix_merchant_name`;
 
 const SETTINGS_COLUMNS_EXTENDED =
-  `${SETTINGS_COLUMNS_PUBLIC_PAGE}, service_mode, public_queue_visible, reschedule_notice_hours, cancellation_notice_hours, reminder_enabled, reminder_24h_enabled, reminder_2h_enabled, reminder_30m_enabled, sound_notifications_enabled, sound_new_appointment_enabled, sound_reschedule_enabled, sound_cancellation_enabled, sound_completion_enabled`;
+  `${SETTINGS_COLUMNS_PUBLIC_PAGE}, service_mode, public_queue_visible, reschedule_notice_hours, cancellation_notice_hours, reminder_enabled, reminder_24h_enabled, reminder_2h_enabled, reminder_30m_enabled, sound_notifications_enabled, sound_new_appointment_enabled, sound_reschedule_enabled, sound_cancellation_enabled, sound_completion_enabled, google_review_url`;
 
 const isMissingColumnError = (message: string) =>
   /column|schema cache|does not exist|PGRST204/i.test(message);
@@ -229,6 +236,7 @@ const DEFAULT_BRANDING: AgendaBrandingSettings = {
   adminWhatsapp: "",
   facebookUrl: "",
   instagramUrl: "",
+  googleReviewUrl: "",
   pixKey: "",
   pixMerchantName: "",
   primaryHsl: "82 100% 61%",
@@ -319,6 +327,7 @@ const sanitizeSettings = (settings: AgendaBrandingSettings): AgendaBrandingSetti
   adminWhatsapp: (settings.adminWhatsapp || "").trim(),
   facebookUrl: (settings.facebookUrl || "").trim(),
   instagramUrl: (settings.instagramUrl || "").trim(),
+  googleReviewUrl: (settings.googleReviewUrl || "").trim(),
   pixKey: (settings.pixKey || "").trim(),
   pixMerchantName: (settings.pixMerchantName || "").trim() || (settings.displayName || "").trim(),
   primaryHsl: sanitizeHsl(settings.primaryHsl, DEFAULT_BRANDING.primaryHsl),
@@ -377,6 +386,7 @@ const rowToSettings = (row: AgendaBusinessSettingsRow): AgendaBrandingSettings =
   adminWhatsapp: row.admin_whatsapp ?? "",
   facebookUrl: row.facebook_url ?? "",
   instagramUrl: row.instagram_url ?? "",
+  googleReviewUrl: row.google_review_url ?? "",
   pixKey: row.pix_key ?? "",
   pixMerchantName: row.pix_merchant_name ?? row.display_name,
   primaryHsl: row.primary_hsl === "258 84% 58%" ? DEFAULT_BRANDING.primaryHsl : row.primary_hsl,
@@ -432,6 +442,7 @@ const settingsToUpsert = (
   admin_whatsapp: settings.adminWhatsapp || null,
   facebook_url: settings.facebookUrl || null,
   instagram_url: settings.instagramUrl || null,
+  google_review_url: settings.googleReviewUrl || null,
   pix_key: settings.pixKey || null,
   pix_merchant_name: settings.pixMerchantName || null,
   primary_hsl: settings.primaryHsl,
@@ -513,6 +524,8 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
   const location = useSyncExternalStore(subscribeAppLocation, getAppLocationSnapshot, getAppLocationSnapshot);
   const [settings, setSettings] = useState<AgendaBrandingSettings>(() => readPreview() ?? DEFAULT_BRANDING);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const requestRef = useRef(0);
 
   const publicSlug = useMemo(() => {
     const requestedSlug = resolveAgendaRequestedSlug(location.pathname, location.search);
@@ -527,10 +540,17 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
     return requestedSlug || resolveAgendaPublicSlug(location.pathname, location.search) || localStorage.getItem("happycash:agenda:last-business") || "";
   }, [isAdmin, location.pathname, location.search, user?.id]);
 
+  const scopeKey = `${publicSlug || 'owner'}:${ownerUserId || user?.id || 'anonymous'}:${isAdmin}`;
+  const [loadedScope, setLoadedScope] = useState<string | null>(null);
+  const scopedLoading = loading || loadedScope !== scopeKey;
+
   const loadSettings = useCallback(async () => {
+    const request = ++requestRef.current;
+    setError(null);
+    const complete = () => { setLoadedScope(scopeKey); setLoading(false); };
     if (isAgendaDemo && !isAdmin) {
       setSettings({ ...DEFAULT_BRANDING, slug: publicSlug || DEFAULT_BRANDING.slug, displayName: 'Barbearia Demonstração', businessType: 'Barbearia', professionalLabel: 'Barbeiro', serviceLabel: 'Serviço' });
-      setLoading(false);
+      complete();
       return;
     }
     setLoading(true);
@@ -540,10 +560,18 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
       writePreview(publicFallbackSettings);
     }
 
+    let resolvedSlug = publicSlug;
+    if (publicSlug) {
+      const resolved = await supabase.rpc('resolve_public_business_slug', { p_slug: publicSlug });
+      if (request !== requestRef.current) return;
+      if (resolved.error) { setError('Não foi possível consultar esta barbearia. Tente novamente.'); complete(); return; }
+      if (!resolved.data) { setSettings(buildPublicFallbackSettings(publicSlug)); setError('Barbearia não encontrada ou agendamento público desativado. Confira o link recebido.'); complete(); return; }
+      resolvedSlug = String(resolved.data);
+    }
     const table = supabase.from("agenda_business_settings");
 
     const scopedQuery = publicSlug
-      ? table.select(SETTINGS_COLUMNS_EXTENDED).eq("slug", publicSlug).eq("public_booking_enabled", true)
+      ? table.select(SETTINGS_COLUMNS_EXTENDED).eq("slug", resolvedSlug).eq("public_booking_enabled", true)
       : user?.id
         ? table.select(SETTINGS_COLUMNS_EXTENDED).eq("owner_user_id", ownerUserId || user.id)
         : table
@@ -555,7 +583,7 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
 
     if (response.error && isMissingColumnError(response.error.message)) {
       const publicPageQuery = publicSlug
-        ? table.select(SETTINGS_COLUMNS_PUBLIC_PAGE).eq("slug", publicSlug).eq("public_booking_enabled", true)
+        ? table.select(SETTINGS_COLUMNS_PUBLIC_PAGE).eq("slug", resolvedSlug).eq("public_booking_enabled", true)
         : user?.id
           ? table.select(SETTINGS_COLUMNS_PUBLIC_PAGE).eq("owner_user_id", ownerUserId || user.id)
           : table
@@ -567,7 +595,7 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
 
     if (response.error && isMissingColumnError(response.error.message)) {
       const fallbackQuery = publicSlug
-        ? table.select(SETTINGS_COLUMNS_BASE).eq("slug", publicSlug).eq("public_booking_enabled", true)
+        ? table.select(SETTINGS_COLUMNS_BASE).eq("slug", resolvedSlug).eq("public_booking_enabled", true)
         : user?.id
           ? table.select(SETTINGS_COLUMNS_BASE).eq("owner_user_id", ownerUserId || user.id)
           : table
@@ -577,21 +605,29 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
       response = await fallbackQuery.maybeSingle();
     }
 
+    if (request !== requestRef.current) return;
     if (response.data) {
       const nextSettings = sanitizeSettings(rowToSettings(response.data as AgendaBusinessSettingsRow));
       setSettings(nextSettings);
       if (publicSlug) localStorage.setItem("happycash:agenda:last-business", nextSettings.slug);
       writePreview(nextSettings);
     } else if (publicFallbackSettings) {
+      setError(response.error ? "Não foi possível carregar esta barbearia." : "Barbearia não encontrada.");
       setSettings(publicFallbackSettings);
       writePreview(publicFallbackSettings);
     }
 
-    setLoading(false);
-  }, [isAdmin, ownerUserId, publicSlug, user?.id]);
+    complete();
+  }, [isAdmin, ownerUserId, publicSlug, user?.id, scopeKey]);
 
   useEffect(() => {
     void loadSettings();
+  }, [loadSettings]);
+
+  useEffect(() => {
+    const refresh = () => { void loadSettings(); };
+    window.addEventListener('agenda:settings-changed', refresh);
+    return () => window.removeEventListener('agenda:settings-changed', refresh);
   }, [loadSettings]);
 
   useEffect(() => {
@@ -606,8 +642,12 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
 
   const saveSettings = useCallback(
     async (nextSettings: AgendaBrandingSettings) => {
-      const sanitized = sanitizeSettings(nextSettings);
-
+      const slug = normalizeAgendaSlug(nextSettings.slug);
+      if (!slug) return { error: 'Use de 2 a 63 letras minúsculas, números ou hífens no endereço da barbearia.' };
+      const sanitized = sanitizeSettings({ ...nextSettings, slug });
+      const reviewUrl = validGoogleReviewUrl(sanitized.googleReviewUrl);
+      if (reviewUrl === null) return { error: 'Informe um link HTTPS de avaliação do Google válido.' };
+      sanitized.googleReviewUrl = reviewUrl;
       if (isAgendaReservedSlug(sanitized.slug)) {
         return {
           error: "Esse link publico e reservado pelo sistema. Escolha outro, como minha-empresa.",
@@ -622,11 +662,9 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
       if (!sanitized.storeAccountId) return { error: "Sua conta ainda nao esta vinculada a uma empresa." };
 
       const upsertPayload = settingsToUpsert(sanitized, user.id);
-      let response = await supabase
-        .from("agenda_business_settings")
-        .upsert(upsertPayload, { onConflict: "owner_user_id" })
-        .select(SETTINGS_COLUMNS_EXTENDED)
-        .single();
+      let response = settings.id
+        ? await supabase.from("agenda_business_settings").update(upsertPayload).eq("id", settings.id).eq("owner_user_id", user.id).select(SETTINGS_COLUMNS_EXTENDED).single()
+        : await supabase.from("agenda_business_settings").insert(upsertPayload).select(SETTINGS_COLUMNS_EXTENDED).single();
 
       if (response.error && isMissingColumnError(response.error.message)) {
         response = await supabase
@@ -648,7 +686,7 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
         return {
           error: isMissingColumnError(response.error.message)
             ? "A base da Agenda esta sem colunas da pagina publica. Aplique as migrations antes de salvar Pix, redes sociais e textos."
-            : response.error.message,
+            : response.error.code === '23505' ? 'Este endereço já pertence a outra barbearia. Escolha outro slug.' : response.error.message,
         };
       }
 
@@ -660,7 +698,7 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
 
       return { error: null };
     },
-    [updatePreview, user?.id],
+    [updatePreview, user?.id, settings.id],
   );
 
   const resetPreview = useCallback(() => {
@@ -671,12 +709,13 @@ export function AgendaBrandingProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AgendaBrandingContextType>(
     () => ({
       settings,
-      loading,
+      loading: scopedLoading,
+      error,
       updatePreview,
       saveSettings,
       resetPreview,
     }),
-    [loading, resetPreview, saveSettings, settings, updatePreview],
+    [scopedLoading, error, resetPreview, saveSettings, settings, updatePreview],
   );
 
   return (

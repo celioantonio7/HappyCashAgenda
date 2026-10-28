@@ -20,6 +20,9 @@ export const AGENDA_RESERVED_SLUGS = new Set([
   "products",
   "auth",
   "reset-password",
+  "sobre",
+  "fila",
+  "exemplos-graficos",
 ]);
 
 export const AGENDA_ADMIN_PATH_PREFIXES = [

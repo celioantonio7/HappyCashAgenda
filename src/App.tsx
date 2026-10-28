@@ -1,3 +1,5 @@
+import { TenantBoundary } from "@/components/app/TenantBoundary";
+import { ClientEnrollment } from "@/components/app/ClientEnrollment";
 import { LoadingState } from '@/components/app/RingLoader';
 import { lazy, Suspense } from "react";
 import { PwaStatus } from "@/components/app/PwaStatus";
@@ -12,6 +14,7 @@ import { ThemeProvider } from "@/hooks/useTheme";
 import { CartProvider } from "@/hooks/useCart";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import Seo from "@/components/Seo";
+const Sobre = lazy(() => import("./pages/Sobre"));
 const Index = lazy(() => import("./pages/Index"));
 const Login = lazy(() => import("./pages/Login"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -41,11 +44,12 @@ const App = () => (
                 <CartDrawer />
                 <Seo />
                 <Suspense fallback={<LoadingState fullScreen label="Abrindo sua agenda…"/>}>
-                <Routes>
+                <TenantBoundary><ClientEnrollment /><Routes>
                   <Route path="/exemplos-graficos" element={<ExemplosGraficos />} />
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/perfil" element={<Perfil />} />
+                  <Route path="/sobre" element={<Sobre />} />
                   <Route path="/feed" element={<Feed />} />
                   <Route path="/assinatura" element={<Assinatura />} />
                   <Route path="/agendamento" element={<Agendamento />} />
@@ -71,6 +75,7 @@ const App = () => (
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/:businessSlug" element={<Index />} />
                   <Route path="/:businessSlug/perfil" element={<Perfil />} />
+                  <Route path="/:businessSlug/sobre" element={<Sobre />} />
                   <Route path="/:businessSlug/feed" element={<Feed />} />
                   <Route path="/:businessSlug/assinatura" element={<Assinatura />} />
                   <Route path="/:businessSlug/agendamento" element={<Agendamento />} />
@@ -78,7 +83,7 @@ const App = () => (
                   <Route path="/:businessSlug/meus-agendamentos" element={<MeusAgendamentos />} />
                   <Route path="/:businessSlug/produtos" element={<Produtos />} />
                   <Route path="*" element={<NotFound />} />
-                </Routes>
+                </Routes></TenantBoundary>
                 </Suspense>
               </TooltipProvider>
             </CartProvider>

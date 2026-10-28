@@ -32,7 +32,9 @@ export default function Login() {
   const [forgot, setForgot] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetBusy, setResetBusy] = useState(false);
-  const clientTarget = readAgendaBookingDraft()?.returnPath || withAgendaPublicSearch('/agendamento', settings);
+  const draft = readAgendaBookingDraft();
+  const draftTarget = draft?.storeSlug === settings.slug && draft.returnPath.startsWith('/') && !draft.returnPath.startsWith('//') ? draft.returnPath : null;
+  const clientTarget = draftTarget || withAgendaPublicSearch('/agendamento', settings);
   useEffect(() => {
     if (!authLoading && user) {
       for (const key of ['barber_id','barber_name','barber_session_token','barber_business_slug']) sessionStorage.removeItem(key);
@@ -67,8 +69,9 @@ export default function Login() {
     try {
       const identifier = email.trim().toLowerCase();
       if (mode === 'signup') {
+        if (!settings.storeAccountId) { notifyError('Abra o link da sua barbearia para criar sua conta.'); return; }
         if (password !== confirmation) { notifyError('As senhas não coincidem.'); return; }
-        const { error, needsEmailConfirmation } = await signUp({ fullName: name.trim(), email: identifier, password, phone: phone.replace(/\D/g, '') });
+        const { error, needsEmailConfirmation } = await signUp({ fullName: name.trim(), email: identifier, password, phone: phone.replace(/\D/g, ''), businessSlug: settings.slug });
         if (error) { notifyError(error.message); return; }
         toast({ title: needsEmailConfirmation ? 'Confirme seu e-mail' : 'Conta criada', description: needsEmailConfirmation ? 'Abra o link de confirmação para acessar sua agenda.' : 'Você já pode agendar seu horário.' });
         setMode('login'); setPassword(''); setConfirmation('');

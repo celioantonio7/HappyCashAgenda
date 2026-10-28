@@ -47,6 +47,8 @@ import {
 } from "@/components/ui/table";
 
 interface Client {
+  user_id?: string | null;
+  user_email_confirmed?: boolean;
   updated_at?: string;
   id: string;
   store_account_id: string;
@@ -276,7 +278,7 @@ export function ClientsTab() {
                 {filtered.slice(0,limit).map((client) => (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">
-                      <span className="flex items-center gap-3"><CollectionPhoto store={settings.storeAccountId||''} kind="clients" id={client.id} name={client.name} version={`${photoVersion}-${client.updated_at||''}`}/><span>{client.name}</span></span>
+                      <span className="flex items-center gap-3"><CollectionPhoto store={settings.storeAccountId||''} kind="clients" id={client.id} name={client.name} version={`${photoVersion}-${client.updated_at||''}`}/><span>{client.name}{client.user_id && client.user_email_confirmed === false && <small className="block text-xs text-muted-foreground">E-mail ainda não confirmado</small>}</span></span>
                       {client.phone && (
                         <span className="block sm:hidden text-xs text-muted-foreground mt-0.5">
                           {client.phone}

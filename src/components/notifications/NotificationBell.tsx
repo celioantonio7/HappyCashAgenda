@@ -7,31 +7,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { NativePushControl } from './NativePushControl';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgendaBranding } from '@/hooks/useAgendaBranding';
 import { supabase } from '@/integrations/supabase/client';
+import { notificationClient } from '@/integrations/supabase/notificationClient';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { playNotificationSound, shouldPlayAgendaSound } from '@/lib/notificationSound';
 
 interface Notification {
   id: string;
-  type: 'purchase' | 'appointment_scheduled' | 'appointment_cancelled';
+  type: 'purchase' | 'appointment_scheduled' | 'appointment_cancelled' | 'appointment_rescheduled' | 'appointment_completed' | 'new_client' | 'reminder';
   title: string;
   description: string;
   created_at: string;
   read: boolean;
 }
-
-type AppointmentNotificationRow = {
-  id: string;
-  client_name: string | null;
-  appointment_date: string;
-  appointment_time: string | null;
-  status: string | null;
-  created_at: string;
-  updated_at: string | null;
-};
 
 type ProductOrderNotificationRow = {
   id: string;
@@ -57,26 +49,31 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
   const hasLoadedRef = useRef(false);
+  const fetchSequenceRef = useRef(0);
   const previousUnreadRef = useRef(0);
   const readStorageKey = `happycash_agenda_read_notifs:${user?.id || 'anon'}:${isAdmin ? settings.storeAccountId || 'admin' : 'client'}`;
 
+  useEffect(() => {
+    fetchSequenceRef.current += 1;
+    hasLoadedRef.current = false;
+    previousUnreadRef.current = 0;
+    setNotifications([]);
+    return () => { fetchSequenceRef.current += 1; };
+  }, [user?.id, settings.storeAccountId]);
+
   const fetchNotifications = useCallback(async () => {
-    if (!user) return;
-    if (isAdmin && !settings.storeAccountId) return;
+    if (!user || !settings.storeAccountId) return;
+    const requestSequence = ++fetchSequenceRef.current;
 
-    const appointmentQuery = supabase
-      .from('appointments')
-      .select('id, client_name, appointment_date, appointment_time, status, created_at, updated_at')
-      .order('updated_at', { ascending: false })
-      .limit(20);
-
-    const { data: appointments } = isAdmin
-      ? await appointmentQuery.eq('store_account_id', settings.storeAccountId)
-      : await appointmentQuery.eq('client_id', user.id);
+    const { data: inbox } = await notificationClient.from('agenda_notifications')
+      .select('*').eq('recipient_id', user.id)
+      .eq('store_account_id', settings.storeAccountId || '')
+      .order('created_at', { ascending: false }).limit(50);
 
     const orderQuery = supabase
       .from('agenda_product_orders')
       .select('id, client_name, payment_method, payment_status, total_amount, created_at')
+      .eq('store_account_id', settings.storeAccountId)
       .order('created_at', { ascending: false })
       .limit(20);
 
@@ -84,34 +81,18 @@ export function NotificationBell() {
       ? await orderQuery.eq('store_account_id', settings.storeAccountId)
       : await orderQuery.eq('client_id', user.id);
 
+    if (requestSequence !== fetchSequenceRef.current) return;
     const notifs: Notification[] = [];
 
-    if (appointments) {
-      (appointments as AppointmentNotificationRow[]).forEach((apt) => {
-        const time = apt.appointment_time?.slice(0, 5);
-        const appointmentInfo = `${apt.appointment_date}${time ? ` às ${time}` : ''}`;
-        const clientInfo = apt.client_name ? `${apt.client_name} - ${appointmentInfo}` : appointmentInfo;
-
-        if (apt.status === 'scheduled') {
-          notifs.push({
-            id: `apt-${apt.id}`,
-            type: 'appointment_scheduled',
-            title: isAdmin ? '📅 Novo agendamento' : '📅 Agendamento confirmado',
-            description: isAdmin ? clientInfo : appointmentInfo,
-            created_at: apt.created_at,
-            read: false,
-          });
-        } else if (apt.status === 'cancelled') {
-          notifs.push({
-            id: `cancel-${apt.id}`,
-            type: 'appointment_cancelled',
-            title: '❌ Agendamento cancelado',
-            description: isAdmin ? clientInfo : appointmentInfo,
-            created_at: apt.updated_at || apt.created_at,
-            read: false,
-          });
-        }
-      });
+    if (inbox) {
+      inbox.forEach((event) => notifs.push({
+        id: event.id,
+        type: (['new_client','reminder'].includes(event.event_type) ? event.event_type : `appointment_${event.event_type}`) as Notification['type'],
+        title: event.title,
+        description: event.description,
+        created_at: event.created_at,
+        read: Boolean(event.read_at),
+      }));
     }
 
     if (productOrders) {
@@ -161,7 +142,7 @@ export function NotificationBell() {
     previousUnreadRef.current = unreadCount;
     hasLoadedRef.current = true;
     setNotifications(notifs);
-  }, [isAdmin, readStorageKey, settings, settings.displayName, settings.storeAccountId, user]);
+  }, [isAdmin, readStorageKey, settings, user]);
 
   useEffect(() => {
     fetchNotifications();
@@ -179,10 +160,8 @@ export function NotificationBell() {
         {
           event: '*',
           schema: 'public',
-          table: 'appointments',
-          filter: isAdmin
-            ? `store_account_id=eq.${settings.storeAccountId}`
-            : `client_id=eq.${user.id}`,
+          table: 'agenda_notifications',
+          filter: `recipient_id=eq.${user.id}`,
         },
         () => {
           fetchNotifications();
@@ -204,7 +183,12 @@ export function NotificationBell() {
       )
       .subscribe();
 
+    const poll = window.setInterval(() => { void fetchNotifications(); }, 30000);
+    const refresh = () => { void fetchNotifications(); };
+    window.addEventListener('focus', refresh);
     return () => {
+      window.clearInterval(poll);
+      window.removeEventListener('focus', refresh);
       supabase.removeChannel(channel);
     };
   }, [fetchNotifications, isAdmin, settings.storeAccountId, user]);
@@ -212,18 +196,20 @@ export function NotificationBell() {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const markAllRead = () => {
+    const inboxIds = notifications.filter(n => n.type !== 'purchase' && !n.read).map(n => n.id);
+    if (inboxIds.length) {
+      void notificationClient.from('agenda_notifications').update({ read_at: new Date().toISOString() })
+        .in('id', inboxIds).then(({ error }) => { if (error) void fetchNotifications(); });
+    }
     const ids = notifications.map(n => n.id);
-    localStorage.setItem(readStorageKey, JSON.stringify(ids));
+    try { localStorage.setItem(readStorageKey, JSON.stringify(ids)); } catch { /* Inbox reads also persist on the server. */ }
     previousUnreadRef.current = 0;
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   const handleOpen = (isOpen: boolean) => {
     setOpen(isOpen);
-    if (isOpen) {
-      // Mark as read when opening
-      setTimeout(markAllRead, 1500);
-    }
+    if (isOpen) markAllRead();
   };
 
   if (!user) return null;
@@ -231,7 +217,7 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={handleOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full relative">
+        <Button variant="ghost" size="icon" aria-label="Notificações" className="rounded-full relative">
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold animate-pulse">
@@ -240,7 +226,7 @@ export function NotificationBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
+      <PopoverContent align="end" className="w-80 max-w-[calc(100vw-2rem)] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto p-0">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <h3 className="font-semibold text-sm">Notificações</h3>
           {unreadCount > 0 && (
@@ -252,7 +238,8 @@ export function NotificationBell() {
             </button>
           )}
         </div>
-        <ScrollArea className="max-h-80">
+        <div className="p-3 border-b border-border"><NativePushControl storeId={settings.storeAccountId} /></div>
+        <ScrollArea className="h-80 max-h-[45dvh]">
           {notifications.length === 0 ? (
             <div className="p-6 text-center text-muted-foreground text-sm">
               Nenhuma notificação
@@ -271,7 +258,7 @@ export function NotificationBell() {
                       <p className={`text-sm ${!notif.read ? 'font-semibold' : 'font-medium'}`}>
                         {notif.title}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                      <p className="text-xs text-muted-foreground mt-0.5 break-words">
                         {notif.description}
                       </p>
                       <p className="text-[10px] text-muted-foreground/60 mt-1">

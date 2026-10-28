@@ -44,3 +44,6 @@ verify_jwt = true
 
 [functions.send-agenda-reminders]
 verify_jwt = false
+
+[functions.dispatch-agenda-push]
+verify_jwt = false

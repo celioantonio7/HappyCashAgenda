@@ -677,3 +677,7 @@ html[data-app-display="standalone"] { touch-action:pan-x pan-y; }
     overscroll-behavior:contain;
   }
 }
+
+.agenda-toast-viewport { top:calc(env(safe-area-inset-top, 0px) + 72px); }
+@media(min-width:640px) { .agenda-toast-viewport { top:auto; bottom:calc(env(safe-area-inset-bottom, 0px) + 24px); } }
+.app-topbar-actions > * { flex-shrink:0; }

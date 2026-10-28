@@ -1,6 +1,8 @@
+import { dailyAppointments } from "@/lib/agendaDailyQueue";
+import { businessNow, businessClock } from "@/lib/businessTime";
 import { AnimatedNumber } from '@/components/app/AnimatedNumber';
 import { ListMore } from '@/components/app/ListMore';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Briefcase, CheckCircle2, Clock, User } from '@/components/animated-icons';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,19 +45,15 @@ interface AppointmentQueueTabProps {
 export function AppointmentQueueTab({ appointments, onConfirmPayment }: AppointmentQueueTabProps) {
   const [limit,setLimit]=useState(10);
   const { settings } = useAgendaBranding();
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const [view, setView] = useState<'queue' | 'appointments'>('queue');
+  const [clock, setClock] = useState(() => businessNow());
+  useEffect(() => { const timer = window.setInterval(() => setClock(businessNow()), 30000); return () => window.clearInterval(timer); }, []);
+  const todayStr = clock.date;
+  const today = appointments.filter(a => a.status === 'scheduled' && a.appointment_date === todayStr);
+  const walkInCount = today.filter(a => a.appointment_type === 'queue').length;
+  const scheduledCount = today.length - walkInCount;
 
-  const queue = useMemo(() => {
-    return appointments
-      .filter(a => a.status === 'scheduled' && a.appointment_date >= todayStr)
-      .sort((a, b) => {
-        if (a.appointment_type === 'queue' || b.appointment_type === 'queue') {
-          return (a.created_at || '').localeCompare(b.created_at || '');
-        }
-        if (a.appointment_date !== b.appointment_date) return a.appointment_date.localeCompare(b.appointment_date);
-        return a.appointment_time.localeCompare(b.appointment_time);
-      });
-  }, [appointments, todayStr]);
+  const queue = useMemo(() => dailyAppointments(appointments, todayStr, view), [appointments, todayStr, view]);
 
   const getTotalPrice = (apt: Appointment) => {
     const extras = apt.extraServices.reduce((s, e) => s + (e.price || 0), 0);
@@ -70,38 +68,46 @@ export function AppointmentQueueTab({ appointments, onConfirmPayment }: Appointm
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-xl font-bold">Fila de Atendimento</h2>
-        <Badge variant="secondary" className="text-sm">{queue.length} na fila</Badge>
+        <h2 className="font-serif text-xl font-bold">{view === 'queue' ? 'Ordem de chegada hoje' : 'Agendamentos de hoje'}</h2>
+        <Badge variant="secondary" className="text-sm">{queue.length} {view === 'queue' ? 'na fila' : 'agendados'}</Badge>
       </div>
 
+      <div role="tablist" aria-label="Tipo de atendimento" className="flex gap-2">
+        <Button role="tab" aria-selected={view === 'queue'} variant={view === 'queue' ? 'default' : 'outline'} onClick={() => { setView('queue'); setLimit(10); }}>Ordem de chegada ({walkInCount})</Button>
+        <Button role="tab" aria-selected={view === 'appointments'} variant={view === 'appointments' ? 'default' : 'outline'} onClick={() => { setView('appointments'); setLimit(10); }}>Com horário ({scheduledCount})</Button>
+      </div>
+      <p className="text-xs text-muted-foreground">Somente atendimentos de hoje, no horário de Brasília. Datas futuras ficam em Agendamentos.</p>
       {queue.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <Clock className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="text-lg font-medium">Nenhum cliente na fila</p>
-            <p className="text-sm">Não há agendamentos pendentes.</p>
+            <p className="text-lg font-medium">{view === 'queue' ? 'Nenhum cliente na fila de hoje' : 'Nenhum agendamento pendente hoje'}</p>
+            <p className="text-sm">{view === 'queue' ? 'Clientes com horário marcado aparecem na aba Com horário.' : 'Consulte outras datas na seção Agendamentos.'}</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           {queue.slice(0,limit).map((apt, index) => {
-            const isToday = apt.appointment_date === todayStr;
+            const isToday = true;
+            const professionalPosition = queue.slice(0, index + 1).filter(item => item.barber_id === apt.barber_id).length;
+            const isNext = view === 'queue' && professionalPosition === 1;
             const isWalkIn = apt.appointment_type === 'queue';
             const allServices = [apt.service?.name, ...apt.extraServices.map(e => e.name)].filter(Boolean);
 
             return (
-              <Card key={apt.id} className={`border-l-4 ${index === 0 && isToday ? 'border-l-primary bg-primary/5' : 'border-l-border'}`}>
+              <Card key={apt.id} className={`border-l-4 ${isNext ? 'border-l-primary bg-primary/5' : 'border-l-border'}`}>
                 <CardContent className="py-4 px-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${index === 0 && isToday ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
-                        {index + 1}
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isNext ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
+                        {view === 'queue' ? professionalPosition : index + 1}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4 text-muted-foreground" />
                           <span className="font-semibold">{apt.client_name}</span>
-                          {index === 0 && isToday && <Badge className="text-[10px] px-1.5 py-0">Próximo</Badge>}
+                          {isNext && <Badge className="text-[10px] px-1.5 py-0">Próximo</Badge>}
+                          {!isWalkIn && apt.appointment_time.slice(0, 5) < clock.time && <Badge variant="outline" className="text-[10px]">Horário passado · pendente</Badge>}
                           {isWalkIn && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Ordem de chegada</Badge>}
                         </div>
                         <div className="text-sm text-muted-foreground mt-1">
@@ -122,10 +128,10 @@ export function AppointmentQueueTab({ appointments, onConfirmPayment }: Appointm
                       ) : null}
                       <div className="text-sm font-medium">
                         {isWalkIn
-                          ? `Entrada ${apt.created_at ? format(new Date(apt.created_at), 'HH:mm') : apt.appointment_time.slice(0, 5)}`
+                          ? `Entrada ${apt.created_at ? businessClock(apt.created_at) : apt.appointment_time.slice(0, 5)}`
                           : `${isToday ? 'Hoje' : format(parseLocalDate(apt.appointment_date), "dd/MM", { locale: ptBR })} às ${apt.appointment_time.slice(0, 5)}`}
                       </div>
-                      <div className="text-lg font-bold text-primary">R$ <AnimatedNumber value={getTotalPrice(apt)} decimals={0}/></div>
+                      <div className="text-lg font-bold text-primary">R$ <AnimatedNumber value={getTotalPrice(apt)} decimals={2}/></div>
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-3 ml-11">

@@ -39,8 +39,8 @@ export function withAgendaPublicSearch(
 ) {
   if (typeof window !== "undefined") {
     const slug =
-      resolveAgendaRequestedSlug(window.location.pathname, window.location.search) ||
       normalizeAgendaSlug(settings.slug) ||
+      resolveAgendaRequestedSlug(window.location.pathname, window.location.search) ||
       resolveAgendaPublicSlug(window.location.pathname, window.location.search);
     if (slug) {
       const base = path.startsWith("/") ? path : `/${path}`;
@@ -62,8 +62,8 @@ export function withAgendaBusinessSearch(
   if (typeof window === "undefined") return base;
 
   const slug =
-    resolveAgendaRequestedSlug(window.location.pathname, window.location.search) ||
     normalizeAgendaSlug(settings.slug) ||
+    resolveAgendaRequestedSlug(window.location.pathname, window.location.search) ||
     resolveAgendaPublicSlug(window.location.pathname, window.location.search);
 
   return slug ? withQuerySlug(base, slug) : base;

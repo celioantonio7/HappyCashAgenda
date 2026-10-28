@@ -99,7 +99,7 @@ export function BrandingTab() {
     const nextDraft = { ...draft, ...next };
     setEditing(true);
     setDraft(nextDraft);
-    updatePreview(nextDraft);
+    updatePreview({ ...nextDraft, slug: settings.slug });
   };
 
   const handleSave = async () => {
@@ -206,18 +206,7 @@ export function BrandingTab() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="slug">Link publico</Label>
-            <Input
-              id="slug"
-              value={draft.slug}
-              onChange={(event) => updateDraft({ slug: event.target.value })}
-              placeholder="minha-empresa"
-            />
-            <p className="text-xs text-muted-foreground">
-              URL publica: agenda.happycashsite.com.br/{draft.slug}
-            </p>
-          </div>
+          <div className="space-y-2 md:col-span-2"><Label htmlFor="aboutText">Sobre a barbearia</Label><Textarea id="aboutText" value={draft.aboutText} rows={4} onChange={event => updateDraft({ aboutText: event.target.value })} /></div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">

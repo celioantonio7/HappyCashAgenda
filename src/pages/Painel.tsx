@@ -1,3 +1,5 @@
+import { FeedManager } from "@/components/admin/FeedManager";
+import { AuditLogTab } from "@/components/admin/AuditLogTab";
 import { KpiNavCard } from '@/components/app/KpiNavCard';
 import { CommissionChart } from '@/components/app/BusinessCharts';
 import { RingLoader as Loader2 } from '@/components/app/RingLoader';
@@ -1307,6 +1309,8 @@ export default function AdminDashboard() {
               <TabsTrigger value="loyalty" className="text-xs sm:text-sm px-2 sm:px-3">Fidelidade</TabsTrigger>
               <TabsTrigger value="locations" className="text-xs sm:text-sm px-2 sm:px-3">Localizações</TabsTrigger>
               <TabsTrigger value="hours" className="text-xs sm:text-sm px-2 sm:px-3">Horários</TabsTrigger>
+              <TabsTrigger value="publications">Publicações</TabsTrigger>
+              <TabsTrigger value="audit">Histórico de alterações</TabsTrigger>
               <TabsTrigger value="branding" className="text-xs sm:text-sm px-2 sm:px-3">Identidade</TabsTrigger>
               <TabsTrigger value="public-page" className="text-xs sm:text-sm px-2 sm:px-3">Agendamento e contato</TabsTrigger>
             </TabsList>
@@ -1324,6 +1328,8 @@ export default function AdminDashboard() {
               <ProductSalesTab products={products} />
             </TabsContent>
 
+            <TabsContent value="publications"><FeedManager /></TabsContent>
+            <TabsContent value="audit"><AuditLogTab /></TabsContent>
             <TabsContent value="branding">
               <BrandingTab />
             </TabsContent>

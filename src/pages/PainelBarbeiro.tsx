@@ -1,3 +1,5 @@
+import { NativePushControl } from "@/components/notifications/NativePushControl";
+import { removeNativePushForSession } from "@/hooks/useNativePush";
 import { RingLoader as Loader2 } from '@/components/app/RingLoader';
 import { AnimatedNumber } from '@/components/app/AnimatedNumber';
 import { Gauge } from '@/components/bklit/gauge/gauge';
@@ -866,15 +868,17 @@ export default function BarberDashboard() {
                 <h1 className="font-serif text-2xl font-bold">Olá, {barberData?.name?.split(' ')[0]}!</h1>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
               <Button onClick={() => setShowNewAppointmentDialog(true)} className="gap-2">
                 <Plus className="w-4 h-4" />
                 Novo Agendamento
               </Button>
+            {barberIdFromSession && <NativePushControl storeId={settings.storeAccountId} barberId={barberIdFromSession} sessionToken={getBarberSessionToken()} />}
             {barberIdFromSession && (
               <Button
                 variant="outline"
-                onClick={() => {
+                onClick={async () => {
+                  await removeNativePushForSession(barberIdFromSession || undefined, getBarberSessionToken() || undefined).catch(() => {});
                   clearBarberSession();
                   navigate(publicHomePath);
                 }}

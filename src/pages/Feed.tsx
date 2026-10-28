@@ -1,15 +1,32 @@
+import { useEffect, useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
-import { FanFeed, type FeedItem } from '@/components/app/FanFeed';
-import hero from '@/assets/hero-barbershop.jpg';
+import { FanFeed } from '@/components/app/FanFeed';
+import { useAgendaBranding } from '@/hooks/useAgendaBranding';
+import { feedClient, type FeedPost } from '@/integrations/supabase/feedClient';
+import { Button } from '@/components/ui/button';
 
-// Visual preview only. No publication, customer activity or offer is persisted.
-const previewPosts: FeedItem[] = [
-  {id:'preview-style',title:'Degradê em dia',image:'/test-design/servico-corte.webp',category:'Inspiração',body:'Linhas definidas e transição suave para renovar o visual.'},
-  {id:'preview-barba',title:'Seu ritual de cuidado',image:'/test-design/servico-barba.webp',category:'Barba',body:'Toalha quente, modelagem e acabamento para cuidar da sua barba.'},
-  {id:'preview-space',title:'Uma pausa na rotina',image:hero,category:'Na barbearia',body:'Um momento para cuidar de você e do seu estilo.'},
-  {id:'preview-team',title:'Conheça a equipe',image:'/test-design/barbeiro-lucas.jpg',category:'Equipe',body:'Técnica e atenção aos detalhes em cada corte e acabamento.'},
-  {id:'preview-care',title:'O cuidado continua em casa',image:'/test-design/produto-cuidados.webp',category:'Cuidados',body:'Mantenha sua rotina de cuidados entre um atendimento e outro.'},
-];
 export default function Feed() {
-  return <Layout><div className="feed-preview"><header className="feed-heading"><p className="page-eyebrow">Da sua barbearia</p><h1>Seu próximo <span className="text-primary">estilo.</span></h1><p>Inspirações, cuidados e novidades da equipe.</p></header><FanFeed items={previewPosts}/></div></Layout>;
+ const { settings, loading } = useAgendaBranding();
+ const [posts, setPosts] = useState<FeedPost[]>([]);
+ const [pending, setPending] = useState(true);
+ const [error, setError] = useState(false);
+ const [retry, setRetry] = useState(0);
+ useEffect(() => {
+  let active = true;
+  setPosts([]); setError(false); setPending(true);
+  if (loading) return;
+  if (!settings.storeAccountId) { setPending(false); return; }
+  const load = async () => {
+   const result = await feedClient.from('agenda_feed_posts').select('*').eq('store_account_id', settings.storeAccountId!).eq('published', true).is('deleted_at', null).order('created_at', { ascending: false }).limit(50);
+   if (active) { setPosts(result.data ?? []); setError(!!result.error); setPending(false); }
+  };
+  void load();
+  const timer = window.setInterval(() => { if (document.visibilityState === 'visible') void load(); }, 30000);
+  const refresh = () => { if (document.visibilityState === 'visible') void load(); };
+  document.addEventListener('visibilitychange', refresh);
+  return () => { active = false; clearInterval(timer); document.removeEventListener('visibilitychange', refresh); };
+ }, [loading, settings.storeAccountId, retry]);
+ return <Layout><div className="feed-preview"><header className="feed-heading"><p className="page-eyebrow">{settings.displayName}</p><h1>Novidades da <span className="text-primary">barbearia.</span></h1><p>Publicações e cuidados compartilhados pela equipe.</p></header>
+  {pending ? <p role="status">Carregando publicações…</p> : error ? <div role="alert"><p>Não foi possível carregar o feed.</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>Tentar novamente</Button></div> : posts.length ? <FanFeed key={posts.map(post => post.id).join(',')} items={posts.map(post => ({ id: post.id, title: post.title, image: post.image_url, category: post.category, body: post.body }))}/> : <p className="text-center text-muted-foreground py-12">A barbearia ainda não publicou novidades.</p>}
+ </div></Layout>;
 }

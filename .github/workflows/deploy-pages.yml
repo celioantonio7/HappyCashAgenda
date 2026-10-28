@@ -32,6 +32,8 @@ jobs:
           VITE_BASE_PATH: /HappyCashAgenda/
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_AGENDA_VAPID_PUBLIC_KEY: ${{ vars.VITE_AGENDA_VAPID_PUBLIC_KEY }}
+          VITE_PUBLIC_APP_URL: ${{ vars.VITE_PUBLIC_APP_URL }}
           VITE_AGENDA_BUSINESS_SLUG: ${{ vars.VITE_AGENDA_BUSINESS_SLUG }}
         run: |
           test -n "$VITE_SUPABASE_URL" || { echo "Configure VITE_SUPABASE_URL in repository variables"; exit 1; }

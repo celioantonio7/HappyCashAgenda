@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
       { src: `${base}icons/icon-512.png`, sizes: '512x512', type: 'image/png', purpose: 'any' },
       { src: `${base}icons/maskable-512.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ] },
-    workbox: { globPatterns: ['**/*.{js,css,html,woff2,png,svg}'], globIgnores: ['referencia/**'], maximumFileSizeToCacheInBytes: 4000000, navigateFallback: `${base}index.html`, navigateFallbackDenylist: [/^\/auth\/v1/, /^\/rest\/v1/], cleanupOutdatedCaches: true },
+    workbox: { importScripts: [`${base}push-sw.js`], globPatterns: ['**/*.{js,css,html,woff2,png,svg}'], globIgnores: ['referencia/**'], maximumFileSizeToCacheInBytes: 4000000, navigateFallback: `${base}index.html`, navigateFallbackDenylist: [/^\/auth\/v1/, /^\/rest\/v1/], cleanupOutdatedCaches: true },
     devOptions: { enabled: false },
   })].filter(Boolean),
   resolve: {

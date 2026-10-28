@@ -1,3 +1,4 @@
+import { removeNativePushForSession } from "@/hooks/useNativePush";
 import { useEffect, useState, type FormEvent, type ChangeEvent } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { User, ShieldCheck, LogOut, Phone, ArrowUpRight, ShoppingBag, MapPin, ImagePlus } from '@/components/animated-icons';
@@ -73,12 +74,12 @@ export default function Perfil() {
         <button className="profile-row" onClick={openPersonal}><MapPin/><span className="min-w-0"><strong>Endereço</strong><small className="truncate">{addressSummary||'Rua, número, bairro e cidade'}</small></span><ArrowUpRight className="ml-auto h-4 w-4"/></button>
         <button className="profile-row" onClick={()=>setDialog('password')}><ShieldCheck/><span><strong>Segurança da conta</strong><small>Atualizar sua senha de acesso</small></span><ArrowUpRight className="ml-auto h-4 w-4"/></button>
         {!isAdmin && !isStaff && <Link className="profile-row" to={withAgendaPublicSearch('/produtos',settings)}><ShoppingBag/><span><strong>Loja da barbearia</strong><small>Produtos e cuidados</small></span><ArrowUpRight className="ml-auto h-4 w-4"/></Link>}
-        <button className="profile-row" onClick={()=>setDialog('about')}><User/><span><strong>Sobre a barbearia</strong><small>Informações e contato</small></span><ArrowUpRight className="ml-auto h-4 w-4"/></button>
+        <Link className="profile-row" to={withAgendaPublicSearch('/sobre', settings)}><User/><span><strong>Sobre a barbearia</strong><small>Informações e contato</small></span><ArrowUpRight className="ml-auto h-4 w-4"/></Link>
         {settings.whatsapp && <a className="profile-row" href={`https://wa.me/${settings.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noreferrer"><Phone/><span><strong>Falar com a barbearia</strong><small>Ajuda com seu atendimento</small></span><ArrowUpRight className="ml-auto h-4 w-4"/></a>}
       </div>
     </div>
     {(isAdmin||isStaff) && <Link to={isAdmin?'/painel':'/painel-profissional'} className="profile-row mt-4 border border-border rounded-xl"><span><strong>{isAdmin?'Meu negócio':'Minha agenda'}</strong><small>Voltar ao painel</small></span><ArrowUpRight className="ml-auto"/></Link>}
-    <button onClick={async()=>{for(const key of ['barber_id','barber_name','barber_session_token','barber_business_slug'])sessionStorage.removeItem(key);await signOut();}} className="profile-row text-destructive mt-4 rounded-xl border border-destructive/20 bg-destructive/5"><LogOut/><span><strong>Sair da conta</strong><small>Encerrar sua sessão neste dispositivo</small></span></button>
+    <button onClick={async()=>{await removeNativePushForSession(sessionStorage.getItem('barber_id') || undefined, sessionStorage.getItem('barber_session_token') || undefined).catch(() => {});for(const key of ['barber_id','barber_name','barber_session_token','barber_business_slug'])sessionStorage.removeItem(key);await signOut();}} className="profile-row text-destructive mt-4 rounded-xl border border-destructive/20 bg-destructive/5"><LogOut/><span><strong>Sair da conta</strong><small>Encerrar sua sessão neste dispositivo</small></span></button>
     <Dialog open={dialog!==null} onOpenChange={open=>{if(!open && !busy)setDialog(null);}}><DialogContent><DialogHeader><DialogTitle>{dialog==='about'?settings.displayName:dialog==='personal'?'Informações pessoais':'Alterar senha'}</DialogTitle><DialogDescription>{dialog==='about'?'Conheça a sua barbearia.':dialog==='personal'?'Atualize sua foto, contato e endereço.':'Escolha uma senha com pelo menos 12 caracteres.'}</DialogDescription></DialogHeader>
       {dialog==='about'?<div className="text-sm text-muted-foreground space-y-4"><p>{settings.aboutText||settings.tagline}</p>{settings.address&&<p>{settings.address}</p>}{settings.whatsapp&&<p>Contato: {settings.whatsapp}</p>}</div>:<form onSubmit={save} className="space-y-4">
         {dialog==='personal'?<>
