@@ -49,6 +49,7 @@ function StoreFeedManager({ store, owner, name }: { store: string; owner: string
   return () => URL.revokeObjectURL(preview);
  }, [file]);
  const start = (post: FeedPost | null = null) => {
+  toast.dismiss('feed-publication');
   setEditing(post); setCaption(post?.body ?? ''); setFile(null);
   setImageUrl(post?.image_url ?? ''); setError(''); setComposer(true);
  };
@@ -90,7 +91,7 @@ function StoreFeedManager({ store, owner, name }: { store: string; owner: string
    if (result.error) throw new Error('Não foi possível publicar. Sua foto e legenda foram mantidas para tentar novamente.');
    if (!alive.current) return;
    setComposer(false); setFile(null); setImageUrl(''); setCaption(''); setEditing(null);
-   toast.success('Publicação disponível no feed dos clientes.');
+   toast.success('Publicação disponível no feed dos clientes.', { id: 'feed-publication' });
    await load();
   } catch (failure) {
    if (alive.current) setError(failure instanceof Error ? failure.message : 'Não foi possível publicar. Tente novamente.');
@@ -107,7 +108,7 @@ function StoreFeedManager({ store, owner, name }: { store: string; owner: string
    const { error: removeError } = await feedClient.from('agenda_feed_posts').update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', post.id).eq('store_account_id', store).select('id').single();
    if (removeError) throw removeError;
    if (!alive.current) return;
-   toast.success('Publicação removida.'); await load();
+   toast.success('Publicação removida.', { id: 'feed-publication' }); await load();
   } catch { if (alive.current) toast.error('Não foi possível remover a publicação.'); }
   finally { saving.current = false; if (alive.current) setBusy(false); }
  };
