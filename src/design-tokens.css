@@ -681,3 +681,7 @@ html[data-app-display="standalone"] { touch-action:pan-x pan-y; }
 .agenda-toast-viewport { top:calc(env(safe-area-inset-top, 0px) + 72px); }
 @media(min-width:640px) { .agenda-toast-viewport { top:auto; bottom:calc(env(safe-area-inset-bottom, 0px) + 24px); } }
 .app-topbar-actions > * { flex-shrink:0; }
+
+.feed-composer.agenda-dialog { display:flex; flex-direction:column; overflow:hidden; padding:0; animation:none!important; max-height:calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 1rem)!important; }
+.feed-composer-form { max-height:inherit; }
+.feed-composer-photo { max-height:min(36dvh, 22rem); min-height:8rem; }

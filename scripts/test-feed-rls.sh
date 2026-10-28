@@ -10,4 +10,5 @@ for attempt in $(seq 1 30); do
 done
 docker exec -i "$feed_test_container" psql -U postgres -v ON_ERROR_STOP=1 < supabase/tests/fixtures/feed_schema.sql
 docker exec -i "$feed_test_container" psql -U postgres -v ON_ERROR_STOP=1 < supabase/migrations/20261027143000_agenda_feed_posts.sql
+docker exec -i "$feed_test_container" psql -U postgres -v ON_ERROR_STOP=1 < supabase/migrations/20261028001314_feed_optional_caption.sql
 docker exec -i "$feed_test_container" psql -U postgres -v ON_ERROR_STOP=1 < supabase/tests/feed_rls.sql

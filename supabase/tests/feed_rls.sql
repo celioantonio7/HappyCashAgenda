@@ -27,4 +27,19 @@ SELECT set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001'
 UPDATE public.agenda_feed_posts SET deleted_at=now() WHERE title='Published';
 SET LOCAL ROLE anon;
 DO $$ BEGIN IF EXISTS (SELECT 1 FROM public.agenda_feed_posts) THEN RAISE EXCEPTION 'Deleted post visible'; END IF; END $$;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+INSERT INTO public.agenda_feed_posts(store_account_id,owner_user_id,title,body,image_url,published)
+VALUES ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','Photo only','','https://example.com/photo-only.jpg',true);
+DO $$ BEGIN
+ BEGIN
+  UPDATE public.agenda_feed_posts SET body=repeat('a',5001) WHERE title='Photo only';
+  RAISE EXCEPTION 'Oversized caption accepted';
+ EXCEPTION WHEN check_violation THEN NULL; END;
+END $$;
+SET LOCAL ROLE anon;
+DO $$ BEGIN
+ IF NOT EXISTS(SELECT 1 FROM public.agenda_feed_posts WHERE title='Photo only' AND body='') THEN RAISE EXCEPTION 'Photo without caption is not public'; END IF;
+ RAISE NOTICE 'PASS photo-only publication, caption length limit and tenant RLS';
+END $$;
 ROLLBACK;
